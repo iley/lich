@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gopkg.in/telegram-bot-api.v1"
+	"gopkg.in/telegram-bot-api.v4"
 )
 
 func HandlePing(bot *TelegramBot, msg *tgbotapi.Message) (bool, TelegramHandler, error) {

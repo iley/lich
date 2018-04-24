@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"gopkg.in/telegram-bot-api.v1"
+	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"strings"
 	"sync"

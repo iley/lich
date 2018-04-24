@@ -3,12 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/telegram-bot-api.v1"
+	"gopkg.in/telegram-bot-api.v4"
 	"strings"
 )
 
 func (d *TorrentDownloader) HandleTorrentFile(bot *TelegramBot, msg *tgbotapi.Message) (bool, TelegramHandler, error) {
-	if msg.Document.FileID == "" || !IsTorrent(&msg.Document) {
+	if msg.Document.FileID == "" || !IsTorrent(msg.Document) {
 		return false, nil, nil
 	}
 	text := fmt.Sprintf("Received torrent file %s. Torrent file downloading not implemented.", msg.Document.FileName)
@@ -33,15 +33,19 @@ func IsTorrent(document *tgbotapi.Document) bool {
 	return strings.HasSuffix(document.FileName, ".torrent")
 }
 
-func MakeKeyboard(keys []string) [][]string {
+func MakeKeyboard(keys []string) [][]tgbotapi.KeyboardButton {
 	keysPerRow := 3
-	keyboard := [][]string{}
+	keyboard := [][]tgbotapi.KeyboardButton{}
 	for i := 0; i < len(keys); i += keysPerRow {
 		j := i + keysPerRow
 		if j > len(keys) {
 			j = len(keys)
 		}
-		keyboard = append(keyboard, keys[i:j])
+		row := make([]tgbotapi.KeyboardButton, j-i)
+		for k := i; k < j; k++ {
+			row[k] = tgbotapi.NewKeyboardButton(keys[k])
+		}
+		keyboard = append(keyboard, row)
 	}
 	return keyboard
 }

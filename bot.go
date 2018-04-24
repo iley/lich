@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gopkg.in/telegram-bot-api.v1"
+	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"sync"
 	"time"
@@ -13,7 +13,7 @@ type TelegramBot struct {
 	CommandHandlers map[string]TelegramHandler // Effectively immutable.
 	GlobalHandlers  []TelegramHandler          // Effectively immutable.
 	userWhiltelist  map[string]struct{}        // Effectively immutable.
-	chatSessions    map[int]*ChatSession       // Protected by mutex.
+	chatSessions    map[int64]*ChatSession     // Protected by mutex.
 	mutex           sync.Mutex
 }
 
@@ -33,7 +33,7 @@ func NewTelegramBot(
 		CommandHandlers: commandHandlers,
 		GlobalHandlers:  globalHandlers,
 		userWhiltelist:  make(map[string]struct{}),
-		chatSessions:    make(map[int]*ChatSession),
+		chatSessions:    make(map[int64]*ChatSession),
 	}
 	if len(config.Whitelist) == 0 {
 		log.Println("Warning! No Telegram user whlitelist enforced.")
@@ -65,7 +65,7 @@ func (bot *TelegramBot) RunLoop() error {
 	go bot.RunGCLoop()
 	for update := range updatesChan {
 		if bot.UserAllowed(update.Message.From.UserName) {
-			bot.EnqueueMessage(&update.Message)
+			bot.EnqueueMessage(update.Message)
 			if err != nil {
 				log.Printf("Error enqueueing a message for chat %d: %s", update.Message.Chat.ID, err.Error())
 			}
