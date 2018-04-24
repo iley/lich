@@ -11,8 +11,15 @@ type Config struct {
 }
 
 type TelegramConfig struct {
-	Token     string   `json:"token"`
-	Whitelist []string `json:"whitelist"`
+	Token     string       `json:"token"`
+	Whitelist []string     `json:"whitelist"`
+	Proxy     *ProxyConfig `json:"proxy,omitempty"`
+}
+
+type ProxyConfig struct {
+	Address  string `json:"address"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 const UnsortedCategory = "unsorted"

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"golang.org/x/net/proxy"
 	"gopkg.in/telegram-bot-api.v4"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -23,7 +25,17 @@ func NewTelegramBot(
 	config *TelegramConfig,
 	commandHandlers map[string]TelegramHandler,
 	globalHandlers []TelegramHandler) (*TelegramBot, error) {
-	botApi, err := tgbotapi.NewBotAPI(config.Token)
+	var botApi *tgbotapi.BotAPI
+	var err error
+	if config.Proxy == nil {
+		botApi, err = tgbotapi.NewBotAPI(config.Token)
+	} else {
+		httpClient, err := proxyHttpClient(config.Proxy.Address, config.Proxy.Username, config.Proxy.Password)
+		if err != nil {
+			return nil, err
+		}
+		botApi, err = tgbotapi.NewBotAPIWithClient(config.Token, httpClient)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -107,4 +119,23 @@ func (bot *TelegramBot) EnqueueMessage(message *tgbotapi.Message) error {
 		bot.chatSessions[message.Chat.ID] = session
 	}
 	return session.EnqueueMessage(message)
+}
+
+func proxyHttpClient(addr, username, password string) (*http.Client, error) {
+	var auth *proxy.Auth = nil
+	if username != "" || password != "" {
+		auth = &proxy.Auth{
+			User:     username,
+			Password: password,
+		}
+	}
+	dialer, err := proxy.SOCKS5("tcp", addr, auth, proxy.Direct)
+	if err != nil {
+		return nil, err
+	}
+	httpTransport := &http.Transport{}
+	httpClient := &http.Client{Transport: httpTransport}
+	httpTransport.Dial = dialer.Dial
+	return httpClient, nil
+
 }
