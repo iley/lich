@@ -8,7 +8,7 @@ import (
 )
 
 func (d *TorrentDownloader) HandleTorrentFile(bot *TelegramBot, msg *tgbotapi.Message) (bool, TelegramHandler, error) {
-	if msg.Document.FileID == "" || !IsTorrent(msg.Document) {
+	if msg.Document == nil || msg.Document.FileID == "" || !IsTorrent(msg.Document) {
 		return false, nil, nil
 	}
 	text := fmt.Sprintf("Received torrent file %s. Torrent file downloading not implemented.", msg.Document.FileName)
