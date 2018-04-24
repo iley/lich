@@ -42,8 +42,8 @@ func MakeKeyboard(keys []string) [][]tgbotapi.KeyboardButton {
 			j = len(keys)
 		}
 		row := make([]tgbotapi.KeyboardButton, j-i)
-		for k := i; k < j; k++ {
-			row[k] = tgbotapi.NewKeyboardButton(keys[k])
+		for k := 0; k < j-i; k++ {
+			row[k] = tgbotapi.NewKeyboardButton(keys[i+k])
 		}
 		keyboard = append(keyboard, row)
 	}
