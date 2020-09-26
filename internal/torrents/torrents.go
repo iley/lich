@@ -1,4 +1,4 @@
-package main
+package torrents
 
 import (
 	"errors"
@@ -11,11 +11,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/iley/lich/internal/config"
 )
 
-type TorrentDownloader struct {
+type Downloader struct {
 	requests chan *DownloadRequest
-	config   *TorrentConfig
+	config   *config.Config
 	mutex    sync.Mutex
 }
 
@@ -27,48 +29,30 @@ type DownloadRequest struct {
 	Reply      ReplyFunc
 }
 
-func NewTorrentDownloader(config *TorrentConfig) (*TorrentDownloader, error) {
-	if err := ValidateTorrentConfig(config); err != nil {
-		return nil, err
-	}
-	d := TorrentDownloader{
+func (request DownloadRequest) ToString() string {
+	return fmt.Sprintf("magnet [%s]", request.Category)
+}
+
+func NewDownloader(cfg *config.Config) (*Downloader, error) {
+	d := Downloader{
 		requests: make(chan *DownloadRequest, 32),
-		config:   config,
+		config:   cfg,
 	}
 	go d.RunDownloadLoop()
 	return &d, nil
 }
 
-func ValidateTorrentConfig(config *TorrentConfig) error {
-	if config.WorkDir == "" {
-		return errors.New("Missing required option 'work_directory'")
-	}
-	err := os.MkdirAll(config.WorkDir, 0755)
-	if err != nil {
-		msg := fmt.Sprintf("Could not create work directory %s: %s",
-			config.WorkDir, err.Error())
-		return errors.New(msg)
-	}
-	hasUnsortedCategory := false
-	for category, targetDir := range config.TargetDirs {
-		if category == UnsortedCategory {
-			hasUnsortedCategory = true
-		}
-		err = os.MkdirAll(targetDir, 0755)
-		if err != nil {
-			msg := fmt.Sprintf("Could not create target directory %s for category %s: %s",
-				targetDir, category, err.Error())
-			return errors.New(msg)
-		}
-	}
-	if !hasUnsortedCategory {
-		return errors.New(fmt.Sprintf("Required category '%s' not found", UnsortedCategory))
+func (d *Downloader) AddRequest(req *DownloadRequest) error {
+	select {
+	case d.requests <- req:
+	default:
+		return errors.New("Download queue full")
 	}
 	return nil
 }
 
-// Must be called under d.mutex. Returns full path.
-func (d *TorrentDownloader) NewPath(parentDir string, desiredName string) (string, error) {
+// NewPath must be called under d.mutex. Returns full path.
+func (d *Downloader) NewPath(parentDir string, desiredName string) (string, error) {
 	for index := 0; ; index++ {
 		path := path.Join(parentDir, desiredName)
 		if index > 0 {
@@ -83,7 +67,7 @@ func (d *TorrentDownloader) NewPath(parentDir string, desiredName string) (strin
 	}
 }
 
-func (d *TorrentDownloader) SafeMkdir(parentDir string, desiredName string) (string, error) {
+func (d *Downloader) SafeMkdir(parentDir string, desiredName string) (string, error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 	newPath, err := d.NewPath(parentDir, desiredName)
@@ -96,7 +80,7 @@ func (d *TorrentDownloader) SafeMkdir(parentDir string, desiredName string) (str
 	return newPath, nil
 }
 
-func (d *TorrentDownloader) SafeMove(src string, destDir string) (string, error) {
+func (d *Downloader) SafeMove(src string, destDir string) (string, error) {
 	log.Printf("Moving %s to %s", src, destDir)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -112,7 +96,7 @@ func (d *TorrentDownloader) SafeMove(src string, destDir string) (string, error)
 	return dest, nil
 }
 
-func (d *TorrentDownloader) RunDownloadLoop() {
+func (d *Downloader) RunDownloadLoop() {
 	for request := range d.requests {
 		request.Reply("Starting download of " + request.ToString())
 		replyText := ""
@@ -127,8 +111,8 @@ func (d *TorrentDownloader) RunDownloadLoop() {
 	}
 }
 
-func (d *TorrentDownloader) Download(request *DownloadRequest) error {
-	workDir, err := d.SafeMkdir(d.config.WorkDir, DateString())
+func (d *Downloader) Download(request *DownloadRequest) error {
+	workDir, err := d.SafeMkdir(d.config.WorkDir, dateString())
 	if err != nil {
 		msg := fmt.Sprintf("Could not create work directory %s: %s", workDir, err.Error())
 		return errors.New(msg)
@@ -148,15 +132,15 @@ func (d *TorrentDownloader) Download(request *DownloadRequest) error {
 	return d.MoveDownloadedFiles(workDir, targetDir)
 }
 
-func (d *TorrentDownloader) GetTargetDir(category string) string {
+func (d *Downloader) GetTargetDir(category string) string {
 	targetDir, found := d.config.TargetDirs[category]
 	if !found {
-		return d.config.TargetDirs[UnsortedCategory]
+		return d.config.TargetDirs[config.UnsortedCategory]
 	}
 	return targetDir
 }
 
-func (d *TorrentDownloader) MoveDownloadedFiles(srcDir string, destDir string) error {
+func (d *Downloader) MoveDownloadedFiles(srcDir string, destDir string) error {
 	fileInfos, err := ioutil.ReadDir(srcDir)
 	if err != nil {
 		return nil
@@ -186,19 +170,7 @@ func (d *TorrentDownloader) MoveDownloadedFiles(srcDir string, destDir string) e
 	return nil
 }
 
-func (d *TorrentDownloader) Categories() []string {
-	categories := make([]string, 0, len(d.config.TargetDirs))
-	for category, _ := range d.config.TargetDirs {
-		categories = append(categories, category)
-	}
-	return categories
-}
-
-func DateString() string {
+func dateString() string {
 	now := time.Now()
 	return fmt.Sprintf("%d-%02d-%02d", now.Year(), now.Month(), now.Day())
-}
-
-func (request DownloadRequest) ToString() string {
-	return fmt.Sprintf("magnet [%s]", request.Category)
 }

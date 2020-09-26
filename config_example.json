@@ -1,16 +1,12 @@
 {
-  "telegram": {
+    "target_dirs": {
+        "movies": "/tmp/torrents/movies",
+        "unsorted": "/tmp/torrents/unsorted"
+    },
     "token": "XXX",
     "whitelist": [
-      "foo",
-      "bar"
-    ]
-  },
-  "torrent": {
-    "work_dir": "/tmp/torrents/in_progress",
-    "target_dirs": {
-      "movies": "/tmp/torrents/movies",
-      "unsorted": "/tmp/torrents/unsorted"
-    }
-  }
+        "foo",
+        "bar"
+    ],
+    "work_dir": "/tmp/torrents/in_progress"
 }

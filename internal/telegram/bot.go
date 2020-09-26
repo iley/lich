@@ -1,56 +1,59 @@
-package main
+package telegram
 
 import (
-	"golang.org/x/net/proxy"
-	"gopkg.in/telegram-bot-api.v4"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"golang.org/x/net/proxy"
+	tgbotapi "gopkg.in/telegram-bot-api.v4"
+
+	"github.com/iley/lich/internal/config"
 )
 
-type TelegramBot struct {
-	Config          *TelegramConfig            // Effectively immutable.
-	Api             *tgbotapi.BotAPI           // Effectively immutable.
-	CommandHandlers map[string]TelegramHandler // Effectively immutable.
-	GlobalHandlers  []TelegramHandler          // Effectively immutable.
-	userWhiltelist  map[string]struct{}        // Effectively immutable.
-	chatSessions    map[int64]*ChatSession     // Protected by mutex.
+type Handler func(*Bot, *tgbotapi.Message) (done bool, nextHandler Handler, err error)
+
+type Bot struct {
+	config          *config.Config         // Effectively immutable.
+	api             *tgbotapi.BotAPI       // Effectively immutable.
+	commandHandlers map[string]Handler     // Effectively immutable.
+	globalHandlers  []Handler              // Effectively immutable.
+	userWhiltelist  map[string]struct{}    // Effectively immutable.
+	chatSessions    map[int64]*chatSession // Protected by mutex.
 	mutex           sync.Mutex
 }
 
-type TelegramHandler func(*TelegramBot, *tgbotapi.Message) (done bool, nextHandler TelegramHandler, err error)
-
-func NewTelegramBot(
-	config *TelegramConfig,
-	commandHandlers map[string]TelegramHandler,
-	globalHandlers []TelegramHandler) (*TelegramBot, error) {
-	var botApi *tgbotapi.BotAPI
+func NewBot(
+	cfg *config.Config,
+	commandHandlers map[string]Handler,
+	globalHandlers []Handler) (*Bot, error) {
+	var api *tgbotapi.BotAPI
 	var err error
-	if config.Proxy == nil {
-		botApi, err = tgbotapi.NewBotAPI(config.Token)
+	if cfg.Proxy == nil {
+		api, err = tgbotapi.NewBotAPI(cfg.Token)
 	} else {
-		httpClient, err := proxyHttpClient(config.Proxy.Address, config.Proxy.Username, config.Proxy.Password)
+		httpClient, err := proxyHTTPClient(cfg.Proxy.Address, cfg.Proxy.Username, cfg.Proxy.Password)
 		if err != nil {
 			return nil, err
 		}
-		botApi, err = tgbotapi.NewBotAPIWithClient(config.Token, httpClient)
+		api, err = tgbotapi.NewBotAPIWithClient(cfg.Token, httpClient)
 	}
 	if err != nil {
 		return nil, err
 	}
-	bot := TelegramBot{
-		Config:          config,
-		Api:             botApi,
-		CommandHandlers: commandHandlers,
-		GlobalHandlers:  globalHandlers,
+	bot := Bot{
+		config:          cfg,
+		api:             api,
+		commandHandlers: commandHandlers,
+		globalHandlers:  globalHandlers,
 		userWhiltelist:  make(map[string]struct{}),
-		chatSessions:    make(map[int64]*ChatSession),
+		chatSessions:    make(map[int64]*chatSession),
 	}
-	if len(config.Whitelist) == 0 {
+	if len(cfg.Whitelist) == 0 {
 		log.Println("Warning! No Telegram user whlitelist enforced.")
 	} else {
-		for _, username := range config.Whitelist {
+		for _, username := range cfg.Whitelist {
 			log.Println("Whitelisting user ", username)
 			bot.userWhiltelist[username] = struct{}{}
 		}
@@ -58,7 +61,7 @@ func NewTelegramBot(
 	return &bot, nil
 }
 
-func (bot *TelegramBot) UserAllowed(username string) bool {
+func (bot *Bot) UserAllowed(username string) bool {
 	if len(bot.userWhiltelist) == 0 {
 		return true
 	}
@@ -66,11 +69,11 @@ func (bot *TelegramBot) UserAllowed(username string) bool {
 	return ok
 }
 
-func (bot *TelegramBot) RunLoop() error {
+func (bot *Bot) RunLoop() error {
 	log.Println("Running the Telegram bot")
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 120
-	updatesChan, err := bot.Api.GetUpdatesChan(updateConfig)
+	updatesChan, err := bot.api.GetUpdatesChan(updateConfig)
 	if err != nil {
 		return nil
 	}
@@ -85,21 +88,25 @@ func (bot *TelegramBot) RunLoop() error {
 			log.Printf("Unauthorized access attempt from user %s", update.Message.From.UserName)
 			reply := tgbotapi.NewMessage(update.Message.Chat.ID, "I don't know you! Go away!")
 			reply.ReplyToMessageID = update.Message.MessageID
-			bot.Api.Send(reply)
+			bot.api.Send(reply)
 		}
 	}
 	return nil
 }
 
-func (bot *TelegramBot) RunGCLoop() {
+func (bot *Bot) Send(c tgbotapi.Chattable) (tgbotapi.Message, error) {
+	return bot.api.Send(c)
+}
+
+func (bot *Bot) RunGCLoop() {
 	for {
 		// TODO: Make the GC timeout configurable.
 		time.Sleep(time.Minute * 5)
 		bot.mutex.Lock()
-		for chatId, session := range bot.chatSessions {
+		for chatID, session := range bot.chatSessions {
 			if session.IsStale() {
-				log.Printf("Session for chat %d is stale. Closing it", chatId)
-				delete(bot.chatSessions, chatId)
+				log.Printf("Session for chat %d is stale. Closing it", chatID)
+				delete(bot.chatSessions, chatID)
 				session.Close()
 			}
 		}
@@ -107,7 +114,7 @@ func (bot *TelegramBot) RunGCLoop() {
 	}
 }
 
-func (bot *TelegramBot) EnqueueMessage(message *tgbotapi.Message) error {
+func (bot *Bot) EnqueueMessage(message *tgbotapi.Message) error {
 	bot.mutex.Lock()
 	defer bot.mutex.Unlock()
 	session, ok := bot.chatSessions[message.Chat.ID]
@@ -115,13 +122,13 @@ func (bot *TelegramBot) EnqueueMessage(message *tgbotapi.Message) error {
 		log.Printf("Reusing session for chat %d", message.Chat.ID)
 	} else {
 		log.Printf("Creating new session for chat %d", message.Chat.ID)
-		session = NewChatSession(bot)
+		session = newChatSession(bot)
 		bot.chatSessions[message.Chat.ID] = session
 	}
 	return session.EnqueueMessage(message)
 }
 
-func proxyHttpClient(addr, username, password string) (*http.Client, error) {
+func proxyHTTPClient(addr, username, password string) (*http.Client, error) {
 	var auth *proxy.Auth = nil
 	if username != "" || password != "" {
 		auth = &proxy.Auth{
@@ -137,5 +144,4 @@ func proxyHttpClient(addr, username, password string) (*http.Client, error) {
 	httpClient := &http.Client{Transport: httpTransport}
 	httpTransport.Dial = dialer.Dial
 	return httpClient, nil
-
 }
