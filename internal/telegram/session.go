@@ -80,5 +80,5 @@ func (session *chatSession) IsStale() bool {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
 	// TODO: Make the session lifetime configurable.
-	return time.Now().Sub(session.lastAccess) > time.Minute*20
+	return time.Since(session.lastAccess) > 4*time.Hour
 }

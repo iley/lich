@@ -32,15 +32,18 @@ func NewBot(
 	var err error
 	if cfg.Proxy == nil {
 		api, err = tgbotapi.NewBotAPI(cfg.Token)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		httpClient, err := proxyHTTPClient(cfg.Proxy.Address, cfg.Proxy.Username, cfg.Proxy.Password)
 		if err != nil {
 			return nil, err
 		}
 		api, err = tgbotapi.NewBotAPIWithClient(cfg.Token, httpClient)
-	}
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 	bot := Bot{
 		config:          cfg,
@@ -80,7 +83,7 @@ func (bot *Bot) RunLoop() error {
 	go bot.RunGCLoop()
 	for update := range updatesChan {
 		if bot.UserAllowed(update.Message.From.UserName) {
-			bot.EnqueueMessage(update.Message)
+			err = bot.EnqueueMessage(update.Message)
 			if err != nil {
 				log.Printf("Error enqueueing a message for chat %d: %s", update.Message.Chat.ID, err.Error())
 			}
@@ -88,14 +91,20 @@ func (bot *Bot) RunLoop() error {
 			log.Printf("Unauthorized access attempt from user %s", update.Message.From.UserName)
 			reply := tgbotapi.NewMessage(update.Message.Chat.ID, "I don't know you! Go away!")
 			reply.ReplyToMessageID = update.Message.MessageID
-			bot.api.Send(reply)
+			_, err = bot.api.Send(reply)
+			if err != nil {
+				log.Printf("error sending message: %v", err)
+			}
 		}
 	}
 	return nil
 }
 
-func (bot *Bot) Send(c tgbotapi.Chattable) (tgbotapi.Message, error) {
-	return bot.api.Send(c)
+func (bot *Bot) Send(c tgbotapi.Chattable) {
+	_, err := bot.api.Send(c)
+	if err != nil {
+		log.Printf("error sending message: %v", err)
+	}
 }
 
 func (bot *Bot) RunGCLoop() {
@@ -140,8 +149,7 @@ func proxyHTTPClient(addr, username, password string) (*http.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	httpTransport := &http.Transport{}
+	httpTransport := &http.Transport{Dial: dialer.Dial}
 	httpClient := &http.Client{Transport: httpTransport}
-	httpTransport.Dial = dialer.Dial
 	return httpClient, nil
 }

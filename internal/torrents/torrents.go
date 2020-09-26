@@ -15,12 +15,6 @@ import (
 	"github.com/iley/lich/internal/config"
 )
 
-type Downloader struct {
-	requests chan *DownloadRequest
-	config   *config.Config
-	mutex    sync.Mutex
-}
-
 type ReplyFunc func(string)
 
 type DownloadRequest struct {
@@ -31,6 +25,12 @@ type DownloadRequest struct {
 
 func (request DownloadRequest) ToString() string {
 	return fmt.Sprintf("magnet [%s]", request.Category)
+}
+
+type Downloader struct {
+	requests chan *DownloadRequest
+	config   *config.Config
+	mutex    sync.Mutex
 }
 
 func NewDownloader(cfg *config.Config) (*Downloader, error) {
