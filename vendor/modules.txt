@@ -3,8 +3,8 @@
 # github.com/technoweenie/multipartstreamer v1.0.1
 ## explicit
 github.com/technoweenie/multipartstreamer
-# golang.org/x/net v0.0.0-20200925080053-05aa5d4ee321
-## explicit
+# golang.org/x/net v0.5.0
+## explicit; go 1.17
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
 # gopkg.in/telegram-bot-api.v4 v4.6.4
