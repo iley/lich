@@ -3,7 +3,6 @@ package torrents
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -28,9 +27,10 @@ func (request DownloadRequest) ToString() string {
 }
 
 type Downloader struct {
-	requests chan *DownloadRequest
-	config   *config.Config
-	mutex    sync.Mutex
+	requests        chan *DownloadRequest
+	config          *config.Config
+	inProgressCount int
+	mutex           sync.Mutex
 }
 
 func NewDownloader(cfg *config.Config) (*Downloader, error) {
@@ -40,6 +40,18 @@ func NewDownloader(cfg *config.Config) (*Downloader, error) {
 	}
 	go d.RunDownloadLoop()
 	return &d, nil
+}
+
+func (d *Downloader) GetInProgressCount() int {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	return d.inProgressCount
+}
+
+func (d *Downloader) IncrInProgressCount(incr int) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	d.inProgressCount += incr
 }
 
 func (d *Downloader) AddRequest(req *DownloadRequest) error {
@@ -100,7 +112,9 @@ func (d *Downloader) RunDownloadLoop() {
 	for request := range d.requests {
 		request.Reply("Starting download of " + request.ToString())
 		replyText := ""
+		d.IncrInProgressCount(1)
 		err := d.Download(request)
+		d.IncrInProgressCount(-1)
 		if err == nil {
 			replyText = "Finished download of " + request.ToString()
 		} else {
@@ -141,7 +155,7 @@ func (d *Downloader) GetTargetDir(category string) string {
 }
 
 func (d *Downloader) MoveDownloadedFiles(srcDir string, destDir string) error {
-	fileInfos, err := ioutil.ReadDir(srcDir)
+	fileInfos, err := os.ReadDir(srcDir)
 	if err != nil {
 		return nil
 	}

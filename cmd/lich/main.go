@@ -33,9 +33,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: Move standard handlers into the telegram package.
+	down, err := torrents.NewDownloader(cfg)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not create the torrent downloader:", err)
+		os.Exit(1)
+	}
+
 	commandHandlers := map[string]telegram.Handler{
-		"ping": handlers.MakePingHandler(),
+		"ping":   handlers.MakePingHandler(),
+		"status": handlers.MakeStatusHandler(down),
 	}
 	commands := make([]string, 1, len(commandHandlers)+1)
 	commands[0] = "/help"
@@ -43,12 +49,6 @@ func main() {
 		commands = append(commands, "/"+command)
 	}
 	commandHandlers["help"] = handlers.MakeHelpHandler(commands)
-
-	down, err := torrents.NewDownloader(cfg)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Could not create the torrent downloader:", err)
-		os.Exit(1)
-	}
 
 	globalHandlers := []telegram.Handler{
 		handlers.MakeTorrentFileHandler(),
