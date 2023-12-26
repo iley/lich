@@ -1,9 +1,11 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/iley/lich/internal/config"
 	"github.com/iley/lich/internal/handlers"
@@ -11,7 +13,18 @@ import (
 	"github.com/iley/lich/internal/torrents"
 )
 
+var (
+	//go:embed VERSION
+	versionFileContents string
+)
+
+func versionString() string {
+	return strings.TrimSuffix(versionFileContents, "\n")
+}
+
 func main() {
+	fmt.Printf("Lich v%s\n", versionString())
+
 	configPath := flag.String("config", "config.json", "Configuration file path")
 	flag.Parse()
 	cfg, err := config.LoadConfig(*configPath)
