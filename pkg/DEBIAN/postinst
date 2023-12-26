@@ -11,8 +11,9 @@ echo "Lich server has been successfully installed."
 echo "The default media directories are located at /media/lich."
 
 if [[ -e /opt/lich/config.json ]]; then
-  echo "Existing config is found at $config_path. Enabling the service."
+  echo "Existing config is found at $config_path. Enabling and starting the service."
   systemctl enable lich
+  systemctl start lich
 else
   cp /opt/lich/config_example.json /opt/lich/config.json
   echo "Example config file is created at $config_path."
