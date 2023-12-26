@@ -1,0 +1,20 @@
+#!/bin/bash
+config_path="/opt/lich/config.json"
+
+adduser --system --no-create-home --group lich
+mkdir -p /media/lich/{movies,series,unsorted,inprogress}
+chown -R :lich /media/lich
+find /media/lich -type d -exec chmod 775 {} \;
+find /media/lich -type f -exec chmod 664 {} \;
+
+echo "Lich server has been successfully installed."
+echo "The default media directories are located at /media/lich."
+
+if [[ -e /opt/lich/config.json ]]; then
+  echo "Existing config is found at $config_path. Enabling the service."
+  systemctl enable lich
+else
+  cp /opt/lich/config_example.json /opt/lich/config.json
+  echo "Example config file is created at $config_path."
+  echo "Please edit the config file and enable the service by running 'systemctl enable lich'."
+fi

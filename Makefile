@@ -10,7 +10,6 @@ lich.deb: lich_linux configs/lich.service configs/config_example.json pkg/DEBIAN
 	cp lich_linux pkg/opt/lich/lich
 	cp configs/lich.service pkg/etc/systemd/system/lich.service
 	cp configs/config_example.json pkg/opt/lich/config_example.json
-	cp configs/config_example.json pkg/opt/lich/config.json
 	dpkg -b pkg lich.deb
 
 always:

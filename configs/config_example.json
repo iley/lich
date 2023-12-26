@@ -1,12 +1,12 @@
 {
     "target_dirs": {
-        "movies": "/tmp/torrents/movies",
-        "unsorted": "/tmp/torrents/unsorted"
+        "movies": "/media/lich/movies",
+        "series": "/media/lich/series",
+        "unsorted": "/media/lich/unsorted"
     },
     "token": "XXX",
     "whitelist": [
-        "foo",
-        "bar"
+        "foo"
     ],
-    "work_dir": "/tmp/torrents/in_progress"
+    "work_dir": "/media/lich/inprogress"
 }

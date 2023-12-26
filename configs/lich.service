@@ -6,8 +6,8 @@ StartLimitIntervalSec=500
 StartLimitBurst=5
 
 [Service]
-User=plex
-Group=plex
+User=lich
+Group=lich
 Type=simple
 ExecStart=/opt/lich/lich --config /opt/lich/config.json
 Restart=on-failure

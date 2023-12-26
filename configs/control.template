@@ -3,3 +3,4 @@ Version: $VERSION
 Maintainer: Ilya Strukov <ilya@istrukov.com>
 Architecture: amd64
 Description: Lich server
+Depends: aria2
