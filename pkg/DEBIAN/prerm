@@ -1,0 +1,4 @@
+#!/bin/bash
+echo "Stopping Lich..."
+systemctl stop lich
+systemctl disable lich
