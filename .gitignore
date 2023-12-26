@@ -3,3 +3,4 @@ config.json
 lich-linux
 lich_linux
 *.deb
+cmd/lich/version.txt

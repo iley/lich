@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	//go:embed VERSION
+	//go:embed version.txt
 	versionFileContents string
 )
 
