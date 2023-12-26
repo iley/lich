@@ -9,7 +9,6 @@ import (
 func MakePingHandler() telegram.Handler {
 	return func(bot *telegram.Bot, msg *tgbotapi.Message) (bool, telegram.Handler, error) {
 		reply := tgbotapi.NewMessage(msg.Chat.ID, "pong")
-		reply.ReplyToMessageID = msg.MessageID
 		bot.Send(reply)
 		return true, nil, nil
 	}
