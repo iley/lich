@@ -48,7 +48,7 @@ func main() {
 	for command := range commandHandlers {
 		commands = append(commands, "/"+command)
 	}
-	commandHandlers["help"] = handlers.MakeHelpHandler(commands)
+	commandHandlers["help"] = handlers.MakeHelpHandler(commands, versionString())
 
 	globalHandlers := []telegram.Handler{
 		handlers.MakeTorrentFileHandler(),
