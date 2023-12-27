@@ -43,15 +43,20 @@ func NewDownloader(ctx context.Context, cfg *config.Config) (*Downloader, error)
 		return nil, fmt.Errorf("could not create torrent session: %w", err)
 	}
 
-	// Clean up the session in case there are torrents left over from a previous run.
+	log.Println("Cleaning up state from previous runs")
 	torrents := session.ListTorrents()
-
 	for _, torrent := range torrents {
 		log.Printf("Removing leftover torrent %s", torrent.ID())
 		err = session.RemoveTorrent(torrent.ID())
 		if err != nil {
 			return nil, fmt.Errorf("could not remove torrent %s: %w", torrent.ID(), err)
 		}
+	}
+
+	log.Println("Cleaning up work directory")
+	err = removeDirectoryContents(cfg.WorkDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not clean up work directory %s: %w", cfg.WorkDir, err)
 	}
 
 	d := Downloader{
@@ -123,9 +128,9 @@ func (d *Downloader) RunDownloadLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Print("shutting down download loop")
+			log.Print("Shutting down download loop")
 			return
-		case request:=<-d.requests:
+		case request := <-d.requests:
 			request.Reply("Starting download of " + request.ToString())
 			replyText := ""
 			torrentName, err := d.Download(request)
@@ -234,4 +239,18 @@ func (d *Downloader) StatusString() string {
 func dateString() string {
 	now := time.Now()
 	return fmt.Sprintf("%d-%02d-%02d", now.Year(), now.Month(), now.Day())
+}
+
+func removeDirectoryContents(dir string) error {
+	dirEntries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range dirEntries {
+		err = os.RemoveAll(path.Join(dir, entry.Name()))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

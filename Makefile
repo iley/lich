@@ -23,9 +23,12 @@ lich.deb: lich_linux config/lich.service config/config_example.json pkg/DEBIAN/c
 	cp config/config_example.json pkg/opt/lich/config_example.json
 	dpkg -b pkg lich.deb
 
+run: lich
+	./lich -config config/config.json
+
 always:
 
 clean:
 	rm -f lich_linux lich lich.deb
 
-.PHONY: all always clean default
+.PHONY: all always clean default run
