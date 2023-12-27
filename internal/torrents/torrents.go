@@ -38,6 +38,7 @@ func NewDownloader(ctx context.Context, cfg *config.Config) (*Downloader, error)
 	config := torrent.DefaultConfig
 	config.DataDir = cfg.WorkDir
 	config.Database = cfg.DatabasePath
+	config.FilePermissions = 0o755
 	session, err := torrent.NewSession(config)
 	if err != nil {
 		return nil, fmt.Errorf("could not create torrent session: %w", err)
