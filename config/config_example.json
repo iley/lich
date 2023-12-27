@@ -9,5 +9,5 @@
         "series": "/media/lich/series",
         "unsorted": "/media/lich/unsorted"
     },
-    "database_path": "/media/lich/torrents.db"
+    "database_path": "/media/lich/db/torrents.db"
 }

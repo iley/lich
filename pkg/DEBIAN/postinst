@@ -7,6 +7,10 @@ chown -R :lich /media/lich
 find /media/lich -type d -exec chmod 775 {} \;
 find /media/lich -type f -exec chmod 664 {} \;
 
+mkdir /opt/lich/db
+chown lich:lich /opt/lich/db
+chmod 700 /opt/lich/db
+
 echo "Lich server has been successfully installed."
 echo "The default media directories are located at /media/lich."
 
