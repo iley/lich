@@ -1,12 +1,12 @@
 {
-    "target_dirs": {
-        "movies": "/media/lich/movies",
-        "series": "/media/lich/series",
-        "unsorted": "/media/lich/unsorted"
-    },
     "token": "XXX",
     "whitelist": [
         "foo"
     ],
-    "work_dir": "/media/lich/inprogress"
+    "work_dir": "/media/lich/inprogress",
+    "target_dirs": {
+        "movies": "/media/lich/movies",
+        "series": "/media/lich/series",
+        "unsorted": "/media/lich/unsorted"
+    }
 }

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/cenkalti/rain/torrent"
 	"github.com/iley/lich/internal/config"
 )
 
@@ -30,13 +30,21 @@ type Downloader struct {
 	requests        chan *DownloadRequest
 	config          *config.Config
 	inProgressCount int
+	session         *torrent.Session
 	mutex           sync.Mutex
 }
 
 func NewDownloader(cfg *config.Config) (*Downloader, error) {
+	config := torrent.DefaultConfig
+	config.DataDir = cfg.WorkDir
+	session, err := torrent.NewSession(config)
+	if err != nil {
+		return nil, err
+	}
 	d := Downloader{
 		requests: make(chan *DownloadRequest, 32),
 		config:   cfg,
+		session:  session,
 	}
 	go d.RunDownloadLoop()
 	return &d, nil
@@ -109,6 +117,7 @@ func (d *Downloader) SafeMove(src string, destDir string) (string, error) {
 }
 
 func (d *Downloader) RunDownloadLoop() {
+	// TODO: Allow concurrent downloads up to a configured limit.
 	for request := range d.requests {
 		request.Reply("Starting download of " + request.ToString())
 		replyText := ""
@@ -126,24 +135,16 @@ func (d *Downloader) RunDownloadLoop() {
 }
 
 func (d *Downloader) Download(request *DownloadRequest) error {
-	workDir, err := d.SafeMkdir(d.config.WorkDir, dateString())
-	if err != nil {
-		msg := fmt.Sprintf("Could not create work directory %s: %s", workDir, err.Error())
-		return errors.New(msg)
-	}
-	logFile := path.Join(workDir, "aria2.log")
-	cmd := exec.Command("aria2c",
-		"-d", workDir,
-		"--log", logFile,
-		"--log-level", "notice",
-		"--seed-time", "0",
-		request.MagnetLink)
-	err = cmd.Run()
+	torrent, err := d.session.AddURI(request.MagnetLink, nil)
 	if err != nil {
 		return err
 	}
+
+	completeChan := torrent.NotifyComplete()
+	<-completeChan
+
 	targetDir := d.GetTargetDir(request.Category)
-	return d.MoveDownloadedFiles(workDir, targetDir)
+	return d.MoveDownloadedFiles(torrent.RootDirectory(), targetDir)
 }
 
 func (d *Downloader) GetTargetDir(category string) string {

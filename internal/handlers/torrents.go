@@ -25,6 +25,7 @@ func MakeTorrentFileHandler() telegram.Handler {
 
 func MakeMagnetLinkHandler(cfg *config.Config, down *torrents.Downloader) telegram.Handler {
 	return func(bot *telegram.Bot, msg *tgbotapi.Message) (bool, telegram.Handler, error) {
+		// TODO: Also handle magnet links in the middle of a message.
 		if !strings.HasPrefix(msg.Text, "magnet:") {
 			return false, nil, nil
 		}
@@ -46,6 +47,11 @@ func makeCategoryHandler(cfg *config.Config, down *torrents.Downloader, torrentU
 				reply := tgbotapi.NewMessage(msg.Chat.ID, text)
 				bot.Send(reply)
 			}
+
+			text := "Adding the torrent to download queue"
+			reply := tgbotapi.NewMessage(msg.Chat.ID, text)
+			bot.Send(reply)
+
 			request := torrents.DownloadRequest{MagnetLink: torrentUrl, Category: category, Reply: replyFunc}
 			err := down.AddRequest(&request)
 			return true, nil, err

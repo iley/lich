@@ -1,12 +1,212 @@
+# github.com/boltdb/bolt v1.3.1
+## explicit
+github.com/boltdb/bolt
+# github.com/br0xen/termbox-util v0.0.0-20200220160819-dc6d6950ba00
+## explicit
+github.com/br0xen/termbox-util
+# github.com/cenkalti/backoff/v3 v3.2.2
+## explicit; go 1.12
+github.com/cenkalti/backoff/v3
+# github.com/cenkalti/boltbrowser v0.0.0-20190327195521-ebed13c76690
+## explicit
+github.com/cenkalti/boltbrowser/boltbrowser
+# github.com/cenkalti/log v1.0.0
+## explicit; go 1.14
+github.com/cenkalti/log
+# github.com/cenkalti/rain v1.12.12
+## explicit; go 1.21
+github.com/cenkalti/rain
+github.com/cenkalti/rain/internal/acceptor
+github.com/cenkalti/rain/internal/addrlist
+github.com/cenkalti/rain/internal/allocator
+github.com/cenkalti/rain/internal/announcer
+github.com/cenkalti/rain/internal/bitfield
+github.com/cenkalti/rain/internal/blocklist
+github.com/cenkalti/rain/internal/blocklist/stree
+github.com/cenkalti/rain/internal/btconn
+github.com/cenkalti/rain/internal/bufferpool
+github.com/cenkalti/rain/internal/cachedpiece
+github.com/cenkalti/rain/internal/console
+github.com/cenkalti/rain/internal/externalip
+github.com/cenkalti/rain/internal/fast
+github.com/cenkalti/rain/internal/filesection
+github.com/cenkalti/rain/internal/handshaker/incominghandshaker
+github.com/cenkalti/rain/internal/handshaker/outgoinghandshaker
+github.com/cenkalti/rain/internal/infodownloader
+github.com/cenkalti/rain/internal/jsonutil
+github.com/cenkalti/rain/internal/logger
+github.com/cenkalti/rain/internal/magnet
+github.com/cenkalti/rain/internal/metainfo
+github.com/cenkalti/rain/internal/mse
+github.com/cenkalti/rain/internal/peer
+github.com/cenkalti/rain/internal/peerconn
+github.com/cenkalti/rain/internal/peerconn/peerreader
+github.com/cenkalti/rain/internal/peerconn/peerwriter
+github.com/cenkalti/rain/internal/peerpriority
+github.com/cenkalti/rain/internal/peerprotocol
+github.com/cenkalti/rain/internal/peersource
+github.com/cenkalti/rain/internal/pexlist
+github.com/cenkalti/rain/internal/piece
+github.com/cenkalti/rain/internal/piececache
+github.com/cenkalti/rain/internal/piecedownloader
+github.com/cenkalti/rain/internal/piecepicker
+github.com/cenkalti/rain/internal/piecewriter
+github.com/cenkalti/rain/internal/resolver
+github.com/cenkalti/rain/internal/resourcemanager
+github.com/cenkalti/rain/internal/resumer
+github.com/cenkalti/rain/internal/resumer/boltdbresumer
+github.com/cenkalti/rain/internal/rpctypes
+github.com/cenkalti/rain/internal/semaphore
+github.com/cenkalti/rain/internal/sliceset
+github.com/cenkalti/rain/internal/storage
+github.com/cenkalti/rain/internal/storage/filestorage
+github.com/cenkalti/rain/internal/stringutil
+github.com/cenkalti/rain/internal/suspendchan
+github.com/cenkalti/rain/internal/tracker
+github.com/cenkalti/rain/internal/tracker/httptracker
+github.com/cenkalti/rain/internal/tracker/udptracker
+github.com/cenkalti/rain/internal/trackermanager
+github.com/cenkalti/rain/internal/unchoker
+github.com/cenkalti/rain/internal/urldownloader
+github.com/cenkalti/rain/internal/verifier
+github.com/cenkalti/rain/internal/webseedsource
+github.com/cenkalti/rain/rainrpc
+github.com/cenkalti/rain/torrent
+# github.com/cpuguy83/go-md2man/v2 v2.0.2
+## explicit; go 1.11
+github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/fatih/color v1.10.0
+## explicit; go 1.13
+github.com/fatih/color
+# github.com/fatih/structs v1.1.0
+## explicit
+github.com/fatih/structs
 # github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 ## explicit
+# github.com/gofrs/uuid v4.4.0+incompatible
+## explicit
+github.com/gofrs/uuid
+# github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
+## explicit
+github.com/golang/groupcache/lru
+# github.com/google/btree v1.1.2
+## explicit; go 1.18
+github.com/google/btree
+# github.com/hashicorp/errwrap v1.1.0
+## explicit
+github.com/hashicorp/errwrap
+# github.com/hashicorp/go-multierror v1.1.1
+## explicit; go 1.13
+github.com/hashicorp/go-multierror
+# github.com/hokaccha/go-prettyjson v0.0.0-20210113012101-fb4e108d2519
+## explicit
+github.com/hokaccha/go-prettyjson
+# github.com/jackpal/bencode-go v1.0.0
+## explicit
+github.com/jackpal/bencode-go
+# github.com/jroimartin/gocui v0.5.0
+## explicit; go 1.16
+github.com/jroimartin/gocui
+# github.com/juju/ratelimit v1.0.2
+## explicit
+github.com/juju/ratelimit
+# github.com/klauspost/cpuid/v2 v2.0.9
+## explicit; go 1.13
+github.com/klauspost/cpuid/v2
+# github.com/mattn/go-colorable v0.1.8
+## explicit; go 1.13
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.12
+## explicit; go 1.12
+github.com/mattn/go-isatty
+# github.com/mattn/go-runewidth v0.0.10
+## explicit; go 1.9
+github.com/mattn/go-runewidth
+# github.com/minio/sha256-simd v1.0.0
+## explicit; go 1.13
+github.com/minio/sha256-simd
+# github.com/mitchellh/go-homedir v1.1.0
+## explicit
+github.com/mitchellh/go-homedir
+# github.com/mr-tron/base58 v1.2.0
+## explicit; go 1.12
+github.com/mr-tron/base58/base58
+# github.com/multiformats/go-multihash v0.2.3
+## explicit; go 1.19
+github.com/multiformats/go-multihash
+github.com/multiformats/go-multihash/core
+github.com/multiformats/go-multihash/register/all
+github.com/multiformats/go-multihash/register/blake2
+github.com/multiformats/go-multihash/register/blake3
+github.com/multiformats/go-multihash/register/miniosha256
+github.com/multiformats/go-multihash/register/murmur3
+github.com/multiformats/go-multihash/register/sha256
+github.com/multiformats/go-multihash/register/sha3
+# github.com/multiformats/go-varint v0.0.6
+## explicit; go 1.12
+github.com/multiformats/go-varint
+# github.com/nictuku/dht v0.0.0-20201226073453-fd1c1dd3d66a
+## explicit; go 1.12
+github.com/nictuku/dht
+# github.com/nictuku/nettools v0.0.0-20150117095333-8867a2107ad3
+## explicit
+github.com/nictuku/nettools
+# github.com/nsf/termbox-go v1.1.1
+## explicit; go 1.15
+github.com/nsf/termbox-go
+# github.com/powerman/rpc-codec v1.2.2
+## explicit; go 1.12
+github.com/powerman/rpc-codec/jsonrpc2
+# github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
+## explicit
+github.com/rcrowley/go-metrics
+# github.com/rivo/uniseg v0.2.0
+## explicit; go 1.12
+github.com/rivo/uniseg
+# github.com/russross/blackfriday/v2 v2.1.0
+## explicit
+github.com/russross/blackfriday/v2
+# github.com/spaolacci/murmur3 v1.1.0
+## explicit
+github.com/spaolacci/murmur3
 # github.com/technoweenie/multipartstreamer v1.0.1
 ## explicit
 github.com/technoweenie/multipartstreamer
+# github.com/urfave/cli v1.22.14
+## explicit; go 1.11
+github.com/urfave/cli
+# github.com/youtube/vitess v3.0.0-rc.3+incompatible
+## explicit
+github.com/youtube/vitess/go/cache
+# github.com/zeebo/bencode v1.0.0
+## explicit
+github.com/zeebo/bencode
+# go.etcd.io/bbolt v1.3.7
+## explicit; go 1.17
+go.etcd.io/bbolt
+# golang.org/x/crypto v0.16.0
+## explicit; go 1.18
+golang.org/x/crypto/blake2b
+golang.org/x/crypto/blake2s
+golang.org/x/crypto/sha3
+# golang.org/x/exp v0.0.0-20220325121720-054d8573a5d8
+## explicit; go 1.18
+golang.org/x/exp/constraints
 # golang.org/x/net v0.19.0
 ## explicit; go 1.18
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
+# golang.org/x/sys v0.15.0
+## explicit; go 1.18
+golang.org/x/sys/cpu
+golang.org/x/sys/unix
+golang.org/x/sys/windows
 # gopkg.in/telegram-bot-api.v4 v4.6.4
 ## explicit
 gopkg.in/telegram-bot-api.v4
+# gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
+gopkg.in/yaml.v2
+# lukechampine.com/blake3 v1.1.6
+## explicit; go 1.13
+lukechampine.com/blake3
