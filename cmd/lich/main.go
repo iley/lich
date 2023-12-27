@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/iley/lich/internal/config"
 	"github.com/iley/lich/internal/handlers"
@@ -23,19 +28,34 @@ func versionString() string {
 }
 
 func main() {
-	fmt.Printf("Lich v%s\n", versionString())
+	log.Printf("Lich v%s\n", versionString())
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// handle SIGINT and SIGTERM
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		log.Println("Signal received, cancelling context.")
+		cancel()
+
+		time.Sleep(5 * time.Second)
+		log.Println("Exiting after 5 seconds.")
+		os.Exit(0)
+	}()
 
 	configPath := flag.String("config", "config.json", "Configuration file path")
 	flag.Parse()
 	cfg, err := config.LoadConfig(*configPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not load config from %s: %s\n", *configPath, err)
-		os.Exit(1)
+		log.Fatalf("Could not load config from %s: %s\n", *configPath, err)
 	}
 
-	down, err := torrents.NewDownloader(cfg)
+	down, err := torrents.NewDownloader(ctx, cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Could not create the torrent downloader:", err)
+		log.Fatalf("Could not create the torrent downloader: %s", err)
 		os.Exit(1)
 	}
 

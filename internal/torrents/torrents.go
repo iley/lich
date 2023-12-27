@@ -1,6 +1,7 @@
 package torrents
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -33,20 +34,32 @@ type Downloader struct {
 	mutex    sync.Mutex
 }
 
-func NewDownloader(cfg *config.Config) (*Downloader, error) {
+func NewDownloader(ctx context.Context, cfg *config.Config) (*Downloader, error) {
 	config := torrent.DefaultConfig
 	config.DataDir = cfg.WorkDir
 	config.Database = cfg.DatabasePath
 	session, err := torrent.NewSession(config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not create torrent session: %w", err)
 	}
+
+	// Clean up the session in case there are torrents left over from a previous run.
+	torrents := session.ListTorrents()
+
+	for _, torrent := range torrents {
+		log.Printf("Removing leftover torrent %s", torrent.ID())
+		err = session.RemoveTorrent(torrent.ID())
+		if err != nil {
+			return nil, fmt.Errorf("could not remove torrent %s: %w", torrent.ID(), err)
+		}
+	}
+
 	d := Downloader{
 		requests: make(chan *DownloadRequest, 32),
 		config:   cfg,
 		session:  session,
 	}
-	go d.RunDownloadLoop()
+	go d.RunDownloadLoop(ctx)
 	return &d, nil
 }
 
@@ -104,19 +117,26 @@ func (d *Downloader) SafeMove(src string, destDir string) (string, error) {
 	return dest, nil
 }
 
-func (d *Downloader) RunDownloadLoop() {
-	// TODO: Allow concurrent downloads up to a configured limit.
-	for request := range d.requests {
-		request.Reply("Starting download of " + request.ToString())
-		replyText := ""
-		err := d.Download(request)
-		if err == nil {
-			replyText = "Finished download of " + request.ToString()
-		} else {
-			replyText = fmt.Sprintf("Failed download of %s: %s", request.ToString(), err.Error())
+func (d *Downloader) RunDownloadLoop(ctx context.Context) {
+	defer d.session.Close()
+	
+	for {
+		select {
+		case <-ctx.Done():
+			log.Print("shutting down download loop")
+			return
+		case request:=<-d.requests:
+			request.Reply("Starting download of " + request.ToString())
+			replyText := ""
+			err := d.Download(request)
+			if err == nil {
+				replyText = "Finished download of " + request.ToString()
+			} else {
+				replyText = fmt.Sprintf("Failed download of %s: %s", request.ToString(), err.Error())
+			}
+			log.Println(replyText)
+			request.Reply(replyText)
 		}
-		log.Println(replyText)
-		request.Reply(replyText)
 	}
 }
 
