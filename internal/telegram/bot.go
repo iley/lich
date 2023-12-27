@@ -53,11 +53,11 @@ func NewBot(
 		userWhiltelist:  make(map[string]struct{}),
 		chatSessions:    make(map[int64]*chatSession),
 	}
-	if len(cfg.Whitelist) == 0 {
+	if len(cfg.UsersAllowlist) == 0 {
 		log.Println("Warning! No Telegram user whlitelist enforced.")
 	} else {
-		for _, username := range cfg.Whitelist {
-			log.Println("Whitelisting user ", username)
+		for _, username := range cfg.UsersAllowlist {
+			log.Println("Allowlisting user ", username)
 			bot.userWhiltelist[username] = struct{}{}
 		}
 	}

@@ -27,16 +27,16 @@ func (request DownloadRequest) ToString() string {
 }
 
 type Downloader struct {
-	requests        chan *DownloadRequest
-	config          *config.Config
-	inProgressCount int
-	session         *torrent.Session
-	mutex           sync.Mutex
+	requests chan *DownloadRequest
+	config   *config.Config
+	session  *torrent.Session
+	mutex    sync.Mutex
 }
 
 func NewDownloader(cfg *config.Config) (*Downloader, error) {
 	config := torrent.DefaultConfig
 	config.DataDir = cfg.WorkDir
+	config.Database = cfg.DatabasePath
 	session, err := torrent.NewSession(config)
 	if err != nil {
 		return nil, err
@@ -48,18 +48,6 @@ func NewDownloader(cfg *config.Config) (*Downloader, error) {
 	}
 	go d.RunDownloadLoop()
 	return &d, nil
-}
-
-func (d *Downloader) GetInProgressCount() int {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-	return d.inProgressCount
-}
-
-func (d *Downloader) IncrInProgressCount(incr int) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-	d.inProgressCount += incr
 }
 
 func (d *Downloader) AddRequest(req *DownloadRequest) error {
@@ -121,9 +109,7 @@ func (d *Downloader) RunDownloadLoop() {
 	for request := range d.requests {
 		request.Reply("Starting download of " + request.ToString())
 		replyText := ""
-		d.IncrInProgressCount(1)
 		err := d.Download(request)
-		d.IncrInProgressCount(-1)
 		if err == nil {
 			replyText = "Finished download of " + request.ToString()
 		} else {
@@ -143,8 +129,17 @@ func (d *Downloader) Download(request *DownloadRequest) error {
 	completeChan := torrent.NotifyComplete()
 	<-completeChan
 
+	stopChan := torrent.NotifyStop()
+	torrent.Stop()
+	<-stopChan
+
 	targetDir := d.GetTargetDir(request.Category)
-	return d.MoveDownloadedFiles(torrent.RootDirectory(), targetDir)
+	err = d.MoveDownloadedFiles(torrent.RootDirectory(), targetDir)
+	if err != nil {
+		return err
+	}
+
+	return d.session.RemoveTorrent(torrent.ID())
 }
 
 func (d *Downloader) GetTargetDir(category string) string {
@@ -183,6 +178,31 @@ func (d *Downloader) MoveDownloadedFiles(srcDir string, destDir string) error {
 		}
 	}
 	return nil
+}
+
+func (d *Downloader) StatusString() string {
+	status := ""
+
+	torrents := d.session.ListTorrents()
+	torrentStatuses := make([]string, len(torrents))
+	for i, torrent := range d.session.ListTorrents() {
+		stats := torrent.Stats()
+		torrentStatuses[i] = fmt.Sprintf("%d: %s (%s)", i+1, torrent.Name(), stats.Status.String())
+	}
+
+	if len(torrentStatuses) > 0 {
+		status += fmt.Sprintf("Active downloads:\n%s", strings.Join(torrentStatuses, "\n"))
+	} else {
+		status += "No active downloads"
+	}
+
+	if len(d.requests) > 0 {
+		status += fmt.Sprintf("\nDownloads queued: %d", len(d.requests))
+	} else {
+		status += "\nNo downloads in the queue"
+	}
+
+	return status
 }
 
 func dateString() string {

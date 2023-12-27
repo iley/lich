@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Token      string            `json:"token"`
-	Whitelist  []string          `json:"whitelist"`
-	Proxy      *ProxyConfig      `json:"proxy,omitempty"`
-	WorkDir    string            `json:"work_dir"`
-	TargetDirs map[string]string `json:"target_dirs"`
+	Token          string            `json:"token"`
+	UsersAllowlist []string          `json:"users_allowlist"`
+	Proxy          *ProxyConfig      `json:"proxy,omitempty"`
+	WorkDir        string            `json:"work_dir"`
+	TargetDirs     map[string]string `json:"target_dirs"`
+	DatabasePath   string            `json:"database_path"`
 }
 
 type ProxyConfig struct {
@@ -46,6 +47,9 @@ func LoadConfig(path string) (*Config, error) {
 }
 
 func validateConfig(cfg *Config) error {
+	if cfg.DatabasePath == "" {
+		return errors.New("Missing required option 'database_path'")
+	}
 	if cfg.WorkDir == "" {
 		return errors.New("Missing required option 'work_directory'")
 	}

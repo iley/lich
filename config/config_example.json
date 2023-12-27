@@ -8,5 +8,6 @@
         "movies": "/media/lich/movies",
         "series": "/media/lich/series",
         "unsorted": "/media/lich/unsorted"
-    }
+    },
+    "database_path": "/media/lich/torrents.db"
 }

@@ -32,7 +32,7 @@ sudo apt-get -f install
 ```
 
 4. Edit the config file at `/opt/lich/config.json`. \
-The most important fields are `token` (your bot's Telegram API token retrieved from `@BotFather`) and `whitelist` (Telegram usernames of users allowed to access the bot).
+The most important fields are `token` (your bot's Telegram API token retrieved from `@BotFather`) and `users_allowlist` (Telegram usernames of users allowed to access the bot).
 
 5. Enable the service to run on boot and start it:
 
