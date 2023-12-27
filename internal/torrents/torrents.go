@@ -123,14 +123,14 @@ func (d *Downloader) RunDownloadLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Print("Shutting down download loop")
+			log.Print("shutting down download loop")
 			return
-		case request := <-d.requests:
+		case request:=<-d.requests:
 			request.Reply("Starting download of " + request.ToString())
 			replyText := ""
-			err := d.Download(request)
+			torrentName, err := d.Download(request)
 			if err == nil {
-				replyText = "Finished download of " + request.ToString()
+				replyText = "Finished download of " + torrentName
 			} else {
 				replyText = fmt.Sprintf("Failed download of %s: %s", request.ToString(), err.Error())
 			}
@@ -140,10 +140,10 @@ func (d *Downloader) RunDownloadLoop(ctx context.Context) {
 	}
 }
 
-func (d *Downloader) Download(request *DownloadRequest) error {
+func (d *Downloader) Download(request *DownloadRequest) (string, error) {
 	torrent, err := d.session.AddURI(request.MagnetLink, nil)
 	if err != nil {
-		return err
+		return "", fmt.Errorf("could not add torrent to session: %w", err)
 	}
 
 	completeChan := torrent.NotifyComplete()
@@ -156,10 +156,16 @@ func (d *Downloader) Download(request *DownloadRequest) error {
 	targetDir := d.GetTargetDir(request.Category)
 	err = d.MoveDownloadedFiles(torrent.RootDirectory(), targetDir)
 	if err != nil {
-		return err
+		return "", fmt.Errorf("could not move downloaded files: %w", err)
 	}
 
-	return d.session.RemoveTorrent(torrent.ID())
+	torrentName := torrent.Name()
+
+	err = d.session.RemoveTorrent(torrent.ID())
+	if err != nil {
+		return "", fmt.Errorf("could not remove torrent from session: %w", err)
+	}
+	return torrentName, nil
 }
 
 func (d *Downloader) GetTargetDir(category string) string {
