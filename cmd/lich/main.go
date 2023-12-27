@@ -18,6 +18,8 @@ import (
 	"github.com/iley/lich/internal/torrents"
 )
 
+const shutdownDelay = 5 * time.Second
+
 var (
 	//go:embed version.txt
 	versionFileContents string
@@ -32,17 +34,16 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// handle SIGINT and SIGTERM
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		<-sigChan
-		log.Println("Signal received, cancelling context.")
+		log.Printf("Termination signal received, shutting down in %s...", shutdownDelay)
 		cancel()
 
-		time.Sleep(5 * time.Second)
-		log.Println("Exiting after 5 seconds.")
+		time.Sleep(shutdownDelay)
+		log.Println("Exiting")
 		os.Exit(0)
 	}()
 

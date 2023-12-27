@@ -119,13 +119,13 @@ func (d *Downloader) SafeMove(src string, destDir string) (string, error) {
 
 func (d *Downloader) RunDownloadLoop(ctx context.Context) {
 	defer d.session.Close()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
-			log.Print("shutting down download loop")
+			log.Print("Shutting down download loop")
 			return
-		case request:=<-d.requests:
+		case request := <-d.requests:
 			request.Reply("Starting download of " + request.ToString())
 			replyText := ""
 			err := d.Download(request)
