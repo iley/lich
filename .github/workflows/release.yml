@@ -28,8 +28,15 @@ jobs:
       run: echo "${GITHUB_REF_NAME}" | sed -e 's/^v//' > VERSION
     - name: Build
       run: make all
+    - name: Rename the package
+      run: mv lich.deb lich_amd64.deb
     - name: Create a release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          lich.deb
+          lich_amd64.deb
+          config/config_example.json
+          lich_linux_amd64
+          lich_linux_arm64
+          lich_darwin_amd64
+          lich_darwin_arm64

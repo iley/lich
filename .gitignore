@@ -1,6 +1,9 @@
 lich
 config.json
-lich-linux
 lich_linux
+lich_linux_amd64
+lich_linux_arm64
+lich_darwin_amd64
+lich_darwin_arm64
 *.deb
 cmd/lich/version.txt
