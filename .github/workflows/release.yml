@@ -1,0 +1,35 @@
+name: Release packages
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+
+jobs:
+  build_packages:
+    name: Build a Debian package
+    runs-on: ubuntu-latest
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+    - name: checkout source code
+      uses: actions/checkout@v4
+    - name: install dependencies
+      run: sudo apt-get install -y build-essential
+    - name: setup go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '>=1.21.0'
+    - name: override version
+      run: echo "${GITHUB_REF_NAME}" | sed -e 's/^v//' > VERSION
+    - name: build
+      run: make all
+    - name: create a release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          lich.deb
