@@ -14,8 +14,8 @@ find /media/lich -type d -exec chmod 2775 {} \;
 find /media/lich -type f -exec chmod 664 {} \;
 
 mkdir -p /opt/lich/db
-chown lich /opt/lich/db
 chmod 700 /opt/lich/db
+chown lich:torrent-files /opt/lich
 
 echo "Lich server has been successfully installed."
 echo "The default media directories are located at /media/lich."
