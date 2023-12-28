@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
@@ -25,8 +26,8 @@ func MakeTorrentFileHandler() telegram.Handler {
 
 func MakeMagnetLinkHandler(cfg *config.Config, down *torrents.Downloader) telegram.Handler {
 	return func(bot *telegram.Bot, msg *tgbotapi.Message) (bool, telegram.Handler, error) {
-		// TODO: Also handle magnet links in the middle of a message.
-		if !strings.HasPrefix(msg.Text, "magnet:") {
+		magnetLink := extractMagnetLink(msg.Text)
+		if magnetLink == "" {
 			return false, nil, nil
 		}
 		categories := cfg.Categories()
@@ -34,7 +35,7 @@ func MakeMagnetLinkHandler(cfg *config.Config, down *torrents.Downloader) telegr
 		reply := tgbotapi.NewMessage(msg.Chat.ID, text)
 		reply.ReplyMarkup = tgbotapi.ReplyKeyboardMarkup{Keyboard: makeKeyboard(categories), OneTimeKeyboard: true}
 		bot.Send(reply)
-		return true, makeCategoryHandler(cfg, down, msg.Text), nil
+		return true, makeCategoryHandler(cfg, down, magnetLink), nil
 	}
 }
 
@@ -83,4 +84,10 @@ func makeKeyboard(keys []string) [][]tgbotapi.KeyboardButton {
 		keyboard = append(keyboard, row)
 	}
 	return keyboard
+}
+
+var magnetLinkRegex = regexp.MustCompile(`magnet:\S+`)
+
+func extractMagnetLink(text string) string {
+	return magnetLinkRegex.FindString(text)
 }
