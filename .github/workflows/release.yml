@@ -16,19 +16,19 @@ jobs:
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
-    - name: checkout source code
+    - name: Checkout source code
       uses: actions/checkout@v4
-    - name: install dependencies
+    - name: Install dependencies
       run: sudo apt-get install -y build-essential
-    - name: setup go
+    - name: Setup Go
       uses: actions/setup-go@v4
       with:
         go-version: '>=1.21.0'
-    - name: override version
+    - name: Override version
       run: echo "${GITHUB_REF_NAME}" | sed -e 's/^v//' > VERSION
-    - name: build
+    - name: Build
       run: make all
-    - name: create a release
+    - name: Create a release
       uses: softprops/action-gh-release@v1
       with:
         files: |
