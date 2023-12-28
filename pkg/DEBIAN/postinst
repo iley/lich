@@ -1,14 +1,20 @@
 #!/bin/bash
 config_path="/opt/lich/config.json"
 
-adduser --system --no-create-home --group lich
+addgroup --system torrent-files
+adduser --system --no-create-home --ingroup torrent-files lich
+if id plex >/dev/null 2>&1; then
+  echo "Found plex user. Adding it to torrent-files group."
+  usermod -aG torrent-files plex
+fi
+
 mkdir -p /media/lich/{movies,series,unsorted,inprogress}
-chown -R :lich /media/lich
-find /media/lich -type d -exec chmod 775 {} \;
+chgrp -R torrent-files /media/lich
+find /media/lich -type d -exec chmod 2775 {} \;
 find /media/lich -type f -exec chmod 664 {} \;
 
 mkdir -p /opt/lich/db
-chown lich:lich /opt/lich/db
+chown lich /opt/lich/db
 chmod 700 /opt/lich/db
 
 echo "Lich server has been successfully installed."
