@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_packages:
-    name: Build a Debian package
+    name: Build binaries and packages
     runs-on: ubuntu-latest
     env:
       DEBIAN_FRONTEND: noninteractive
