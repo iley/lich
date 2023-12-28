@@ -1,6 +1,6 @@
 default: lich
 
-all: lich_linux_amd64 lich_linux_arm64 lich_darwin_amd64 lich_darwin_amd64 lich.deb
+all: lich_linux_amd64 lich_linux_arm64 lich_darwin_amd64 lich_darwin_arm64 lich.deb
 
 cmd/lich/version.txt: always
 	echo $$(cat VERSION)-$$(git rev-parse --short HEAD) > $@
