@@ -2,7 +2,6 @@ package torrents
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -15,30 +14,40 @@ import (
 	"github.com/iley/lich/internal/config"
 )
 
-type ReplyFunc func(string)
+// ReplyFunc is a function that sends a reply to the user.
+type ReplyFunc func(int64, string)
 
 type DownloadRequest struct {
 	MagnetLink string
 	Category   string
-	Reply      ReplyFunc
+	ChatId     int64
 }
 
 func (request DownloadRequest) ToString() string {
 	return fmt.Sprintf("magnet [%s]", request.Category)
 }
 
-type Downloader struct {
-	requests chan *DownloadRequest
-	config   *config.Config
-	session  *torrent.Session
-	mutex    sync.Mutex
+type DownloadListEntry struct {
+	Name      string
+	TorrentId string
+	Category  string
 }
 
-func NewDownloader(ctx context.Context, cfg *config.Config) (*Downloader, error) {
+type Downloader struct {
+	config  *config.Config
+	session *torrent.Session
+	// Stores the mapping between torrent ID and the download request.
+	downloads map[string]*DownloadRequest
+	reply     ReplyFunc
+	mutex     sync.Mutex
+}
+
+func NewDownloader(ctx context.Context, cfg *config.Config, reply ReplyFunc) (*Downloader, error) {
 	config := torrent.DefaultConfig
 	config.DataDir = cfg.WorkDir
 	config.Database = cfg.DatabasePath
 	config.FilePermissions = 0o755
+
 	session, err := torrent.NewSession(config)
 	if err != nil {
 		return nil, fmt.Errorf("could not create torrent session: %w", err)
@@ -61,19 +70,83 @@ func NewDownloader(ctx context.Context, cfg *config.Config) (*Downloader, error)
 	}
 
 	d := Downloader{
-		requests: make(chan *DownloadRequest, 32),
-		config:   cfg,
-		session:  session,
+		config:    cfg,
+		session:   session,
+		downloads: make(map[string]*DownloadRequest),
+		reply:     reply,
 	}
-	go d.RunDownloadLoop(ctx)
+	go d.RunCleanupLoop(ctx)
 	return &d, nil
 }
 
-func (d *Downloader) AddRequest(req *DownloadRequest) error {
-	select {
-	case d.requests <- req:
-	default:
-		return errors.New("Download queue full")
+func (d *Downloader) Shutdown() {
+	d.session.Close()
+}
+
+func (d *Downloader) RunCleanupLoop(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Termination signal received, shutting down the cleanup loop")
+			return
+		case <-time.After(time.Second * 5):
+			err := d.Cleanup()
+			if err != nil {
+				log.Printf("Cleanup error: %s", err.Error())
+			}
+		}
+	}
+}
+
+func (d *Downloader) Add(req *DownloadRequest) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	d.reply(req.ChatId, "Starting download of "+req.ToString())
+
+	torr, err := d.session.AddURI(req.MagnetLink, nil)
+	if err != nil {
+		return fmt.Errorf("could not add torrent to session: %w", err)
+	}
+	d.downloads[torr.ID()] = req
+	return nil
+}
+
+func (d *Downloader) Cleanup() error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	torrents := d.session.ListTorrents()
+	for _, torr := range torrents {
+		stats := torr.Stats()
+		if stats.Status == torrent.Seeding || stats.Status == torrent.Stopped {
+			log.Printf("Removing completed torrent %s", torr.Name())
+
+			category := config.UnsortedCategory
+			req, found := d.downloads[torr.ID()]
+			if found {
+				d.reply(req.ChatId, fmt.Sprintf("Download of [%s] %s completed", req.Category, torr.Name()))
+				log.Printf("Found download request for torrent %s, category %s", torr.ID(), req.Category)
+				category = req.Category
+			} else {
+				// TODO: Store the requests in a persistent storage to recover from restarts.
+				log.Printf("Could not find download request for torrent %s", torr.Name())
+			}
+
+			targetDir := d.GetTargetDir(category)
+			err := d.MoveDownloadedFiles(torr.RootDirectory(), targetDir)
+			if err != nil {
+				log.Printf("Could not move downloaded files: %s", err.Error())
+				continue
+			}
+
+			log.Printf("Removing torrent %s from session", torr.ID())
+			err = d.session.RemoveTorrent(torr.ID())
+			if err != nil {
+				log.Printf("could not remove torrent from session: %s", err)
+				continue
+			}
+		}
 	}
 	return nil
 }
@@ -94,12 +167,11 @@ func (d *Downloader) NewPath(parentDir string, desiredName string) (string, erro
 	}
 }
 
+// SafeMkdir must be called under d.mutex.
 func (d *Downloader) SafeMkdir(parentDir string, desiredName string) (string, error) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
 	newPath, err := d.NewPath(parentDir, desiredName)
 	if err == nil {
-		err = os.Mkdir(newPath, 0755)
+		err = os.Mkdir(newPath, 0o755)
 	}
 	if err != nil {
 		return "", err
@@ -107,10 +179,9 @@ func (d *Downloader) SafeMkdir(parentDir string, desiredName string) (string, er
 	return newPath, nil
 }
 
+// SafeMove must be called under d.mutex.
 func (d *Downloader) SafeMove(src string, destDir string) (string, error) {
 	log.Printf("Moving %s to %s", src, destDir)
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
 	base := path.Base(src)
 	dest, err := d.NewPath(destDir, base)
 	if err != nil {
@@ -121,57 +192,6 @@ func (d *Downloader) SafeMove(src string, destDir string) (string, error) {
 		return "", err
 	}
 	return dest, nil
-}
-
-func (d *Downloader) RunDownloadLoop(ctx context.Context) {
-	defer d.session.Close()
-
-	for {
-		select {
-		case <-ctx.Done():
-			log.Print("Shutting down download loop")
-			return
-		case request := <-d.requests:
-			request.Reply("Starting download of " + request.ToString())
-			replyText := ""
-			torrentName, err := d.Download(request)
-			if err == nil {
-				replyText = "Finished download of " + torrentName
-			} else {
-				replyText = fmt.Sprintf("Failed download of %s: %s", request.ToString(), err.Error())
-			}
-			log.Println(replyText)
-			request.Reply(replyText)
-		}
-	}
-}
-
-func (d *Downloader) Download(request *DownloadRequest) (string, error) {
-	torrent, err := d.session.AddURI(request.MagnetLink, nil)
-	if err != nil {
-		return "", fmt.Errorf("could not add torrent to session: %w", err)
-	}
-
-	completeChan := torrent.NotifyComplete()
-	<-completeChan
-
-	stopChan := torrent.NotifyStop()
-	torrent.Stop()
-	<-stopChan
-
-	targetDir := d.GetTargetDir(request.Category)
-	err = d.MoveDownloadedFiles(torrent.RootDirectory(), targetDir)
-	if err != nil {
-		return "", fmt.Errorf("could not move downloaded files: %w", err)
-	}
-
-	torrentName := torrent.Name()
-
-	err = d.session.RemoveTorrent(torrent.ID())
-	if err != nil {
-		return "", fmt.Errorf("could not remove torrent from session: %w", err)
-	}
-	return torrentName, nil
 }
 
 func (d *Downloader) GetTargetDir(category string) string {
@@ -198,21 +218,23 @@ func (d *Downloader) MoveDownloadedFiles(srcDir string, destDir string) error {
 	if len(entriesToMove) > 1 {
 		destDir, err = d.SafeMkdir(destDir, "torrent")
 		if err != nil {
-			return err
+			return fmt.Errorf("could not create directory %s: %w", destDir, err)
 		}
 	}
 	for _, entry := range entriesToMove {
 		src := path.Join(srcDir, entry)
 		_, err := d.SafeMove(src, destDir)
 		if err != nil {
-			msg := fmt.Sprintf("Could not move %s to %s: %s", src, destDir, err.Error())
-			return errors.New(msg)
+			return fmt.Errorf("could not move %s to %s: %w", src, destDir, err)
 		}
 	}
 	return nil
 }
 
 func (d *Downloader) StatusString() string {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	status := ""
 
 	torrents := d.session.ListTorrents()
@@ -228,18 +250,39 @@ func (d *Downloader) StatusString() string {
 		status += "No active downloads"
 	}
 
-	if len(d.requests) > 0 {
-		status += fmt.Sprintf("\nDownloads queued: %d", len(d.requests))
-	} else {
-		status += "\nNo downloads in the queue"
-	}
-
 	return status
 }
 
-func dateString() string {
-	now := time.Now()
-	return fmt.Sprintf("%d-%02d-%02d", now.Year(), now.Month(), now.Day())
+func (d *Downloader) List() []DownloadListEntry {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	torrents := d.session.ListTorrents()
+	entries := make([]DownloadListEntry, len(torrents))
+	for i, torr := range d.session.ListTorrents() {
+		category := config.UnsortedCategory
+		req, found := d.downloads[torr.ID()]
+		if found {
+			category = req.Category
+		}
+		entries[i] = DownloadListEntry{
+			Name:      torr.Name(),
+			TorrentId: torr.ID(),
+			Category:  category,
+		}
+	}
+	return entries
+}
+
+func (d *Downloader) Cancel(torrentId string) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	err := d.session.RemoveTorrent(torrentId)
+	if err != nil {
+		return fmt.Errorf("could not remove torrent %s: %w", torrentId, err)
+	}
+	return nil
 }
 
 func removeDirectoryContents(dir string) error {

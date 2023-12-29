@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -104,7 +105,7 @@ func NewBot(cfg *config.Config, handlers []HandlerDesc) (*Bot, error) {
 		log.Println("Warning! No Telegram user whlitelist enforced.")
 	} else {
 		for _, username := range cfg.UsersAllowlist {
-			log.Println("Allowlisting user ", username)
+			log.Printf("Allowlisting user %s", username)
 			bot.userWhiltelist[username] = struct{}{}
 		}
 	}
@@ -119,29 +120,38 @@ func (bot *Bot) UserAllowed(username string) bool {
 	return ok
 }
 
-func (bot *Bot) RunLoop() error {
+func (bot *Bot) RunLoop(ctx context.Context) error {
 	log.Println("Running the Telegram bot")
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 120
 	updatesChan := bot.api.GetUpdatesChan(updateConfig)
-	go bot.RunGCLoop()
-	for update := range updatesChan {
-		if bot.UserAllowed(update.Message.From.UserName) {
-			err := bot.EnqueueMessage(update.Message)
-			if err != nil {
-				log.Printf("Error enqueueing a message for chat %d: %s", update.Message.Chat.ID, err.Error())
+	go bot.RunGCLoop(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Termination signal received, shutting down the Telegram bot")
+			return nil
+		case update, ok := <-updatesChan:
+			if ctx.Err() != nil || !ok {
+				log.Println("Updates channel closed, shutting down the Telegram bot")
+				return nil
 			}
-		} else {
-			log.Printf("Unauthorized access attempt from user %s", update.Message.From.UserName)
-			reply := tgbotapi.NewMessage(update.Message.Chat.ID, "I don't know you! Go away!")
-			reply.ReplyToMessageID = update.Message.MessageID
-			_, err := bot.api.Send(reply)
-			if err != nil {
-				log.Printf("error sending message: %v", err)
+			if bot.UserAllowed(update.Message.From.UserName) {
+				err := bot.EnqueueMessage(update.Message)
+				if err != nil {
+					log.Printf("Error enqueueing a message for chat %d: %s", update.Message.Chat.ID, err.Error())
+				}
+			} else {
+				log.Printf("Unauthorized access attempt from user %s", update.Message.From.UserName)
+				reply := tgbotapi.NewMessage(update.Message.Chat.ID, "I don't know you! Go away!")
+				reply.ReplyToMessageID = update.Message.MessageID
+				_, err := bot.api.Send(reply)
+				if err != nil {
+					log.Printf("error sending message: %v", err)
+				}
 			}
 		}
 	}
-	return nil
 }
 
 func (bot *Bot) Send(c tgbotapi.Chattable) {
@@ -151,19 +161,24 @@ func (bot *Bot) Send(c tgbotapi.Chattable) {
 	}
 }
 
-func (bot *Bot) RunGCLoop() {
+func (bot *Bot) RunGCLoop(ctx context.Context) {
 	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Termination signal received, shutting down the GC loop")
+			return
 		// TODO: Make the GC timeout configurable.
-		time.Sleep(time.Minute * 5)
-		bot.mutex.Lock()
-		for chatID, session := range bot.chatSessions {
-			if session.IsStale() {
-				log.Printf("Session for chat %d is stale. Closing it", chatID)
-				delete(bot.chatSessions, chatID)
-				session.Close()
+		case <-time.After(time.Minute * 5):
+			bot.mutex.Lock()
+			for chatID, session := range bot.chatSessions {
+				if session.IsStale() {
+					log.Printf("Session for chat %d is stale. Closing it", chatID)
+					delete(bot.chatSessions, chatID)
+					session.Close()
+				}
 			}
+			bot.mutex.Unlock()
 		}
-		bot.mutex.Unlock()
 	}
 }
 
@@ -179,6 +194,11 @@ func (bot *Bot) EnqueueMessage(message *tgbotapi.Message) error {
 		bot.chatSessions[message.Chat.ID] = session
 	}
 	return session.EnqueueMessage(message)
+}
+
+func (bot *Bot) SendReply(chatID int64, text string) {
+	reply := tgbotapi.NewMessage(chatID, text)
+	bot.Send(reply)
 }
 
 func proxyHTTPClient(addr, username, password string) (*http.Client, error) {

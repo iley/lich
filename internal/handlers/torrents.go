@@ -18,8 +18,7 @@ func MakeTorrentFileHandler() telegram.Handler {
 			return false, nil, nil
 		}
 		text := fmt.Sprintf("Received torrent file %s. Torrent file downloading not implemented.", msg.Document.FileName)
-		reply := tgbotapi.NewMessage(msg.Chat.ID, text)
-		bot.Send(reply)
+		bot.SendReply(msg.Chat.ID, text)
 		return true, nil, nil
 	}
 }
@@ -44,23 +43,13 @@ func makeCategoryHandler(cfg *config.Config, down *torrents.Downloader, torrentU
 		category := msg.Text
 		_, found := cfg.TargetDirs[category]
 		if found {
-			replyFunc := func(text string) {
-				reply := tgbotapi.NewMessage(msg.Chat.ID, text)
-				bot.Send(reply)
-			}
-
-			text := "Adding the torrent to download queue"
-			reply := tgbotapi.NewMessage(msg.Chat.ID, text)
-			bot.Send(reply)
-
-			request := torrents.DownloadRequest{MagnetLink: torrentUrl, Category: category, Reply: replyFunc}
-			err := down.AddRequest(&request)
+			request := torrents.DownloadRequest{MagnetLink: torrentUrl, Category: category, ChatId: msg.Chat.ID}
+			err := down.Add(&request)
 			return true, nil, err
 		}
 
 		text := fmt.Sprintf("Unknown category %s. Pick one of %s", category, strings.Join(cfg.Categories(), ", "))
-		reply := tgbotapi.NewMessage(msg.Chat.ID, text)
-		bot.Send(reply)
+		bot.SendReply(msg.Chat.ID, text)
 		return true, makeCategoryHandler(cfg, down, torrentUrl), nil
 	}
 }
@@ -90,4 +79,19 @@ var magnetLinkRegex = regexp.MustCompile(`magnet:\S+`)
 
 func extractMagnetLink(text string) string {
 	return magnetLinkRegex.FindString(text)
+}
+
+func MakeCancelHandler(down *torrents.Downloader) telegram.Handler {
+	return func(bot *telegram.Bot, msg *tgbotapi.Message) (bool, telegram.Handler, error) {
+		torrentId := strings.TrimPrefix(msg.Text, "/cancel_")
+		torrentId = strings.TrimSpace(torrentId)
+		err := down.Cancel(torrentId)
+		if err != nil {
+			text := fmt.Sprintf("Could not cancel torrent %s: %s", torrentId, err.Error())
+			bot.SendReply(msg.Chat.ID, text)
+			return true, nil, nil
+		}
+		bot.SendReply(msg.Chat.ID, fmt.Sprintf("Successfully cancelled torrent %s", torrentId))
+		return true, nil, nil
+	}
 }

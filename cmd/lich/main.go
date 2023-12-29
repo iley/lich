@@ -54,11 +54,22 @@ func main() {
 		log.Fatalf("Could not load config from %s: %s\n", *configPath, err)
 	}
 
-	down, err := torrents.NewDownloader(ctx, cfg)
+	// Workaround for the circular depedency between the bot and the downloader.
+	var bot *telegram.Bot
+	replyFunc := func(chatId int64, text string) {
+		if bot == nil {
+			log.Printf("Cannot reply to chat %d: bot not initialized", chatId)
+			return
+		}
+		bot.SendReply(chatId, text)
+	}
+
+	down, err := torrents.NewDownloader(ctx, cfg, replyFunc)
 	if err != nil {
 		log.Fatalf("Could not create the torrent downloader: %s", err)
 		os.Exit(1)
 	}
+	defer down.Shutdown()
 
 	handlers := []telegram.HandlerDesc{
 		{
@@ -84,15 +95,20 @@ func main() {
 			Command: "help",
 			Handler: handlers.MakeHelpHandler([]string{"/ping", "/status"}, versionString()),
 		},
+		{
+			Scope:   telegram.HANDLER_WILDCARD_COMMAND,
+			Command: "cancel",
+			Handler: handlers.MakeCancelHandler(down),
+		},
 	}
 
-	bot, err := telegram.NewBot(cfg, handlers)
+	bot, err = telegram.NewBot(cfg, handlers)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Could not create the Telegram bot:", err)
 		os.Exit(1)
 	}
 
-	err = bot.RunLoop()
+	err = bot.RunLoop(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error while running the Telegram bot:", err)
 		os.Exit(1)

@@ -7,3 +7,4 @@ lich_darwin_amd64
 lich_darwin_arm64
 *.deb
 cmd/lich/version.txt
+.vscode
