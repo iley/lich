@@ -25,16 +25,10 @@ make lich.deb
 sudo dpkg -i lich.deb
 ```
 
-3. If the command above fails due to `aria2` not being installed, fix that by running:
-
-```
-sudo apt-get -f install
-```
-
-4. Edit the config file at `/opt/lich/config.json`. \
+3. Edit the config file at `/opt/lich/config.json`. \
 The most important fields are `token` (your bot's Telegram API token retrieved from `@BotFather`) and `users_allowlist` (Telegram usernames of users allowed to access the bot).
 
-5. Enable the service to run on boot and start it:
+4. Enable the service to run on boot and start it:
 
 ```
 sudo systemctl enable lich
