@@ -60,23 +60,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	commandHandlers := map[string]telegram.Handler{
-		"ping":   handlers.MakePingHandler(),
-		"status": handlers.MakeStatusHandler(down),
+	handlers := []telegram.HandlerDesc{
+		{
+			Scope:   telegram.HANDLER_GLOBAL,
+			Handler: handlers.MakeTorrentFileHandler(),
+		},
+		{
+			Scope:   telegram.HANDLER_GLOBAL,
+			Handler: handlers.MakeMagnetLinkHandler(cfg, down),
+		},
+		{
+			Scope:   telegram.HANDLER_COMMAND,
+			Command: "ping",
+			Handler: handlers.MakePingHandler(),
+		},
+		{
+			Scope:   telegram.HANDLER_COMMAND,
+			Command: "status",
+			Handler: handlers.MakeStatusHandler(down),
+		},
+		{
+			Scope:   telegram.HANDLER_COMMAND,
+			Command: "help",
+			Handler: handlers.MakeHelpHandler([]string{"/ping", "/status"}, versionString()),
+		},
 	}
-	commands := make([]string, 1, len(commandHandlers)+1)
-	commands[0] = "/help"
-	for command := range commandHandlers {
-		commands = append(commands, "/"+command)
-	}
-	commandHandlers["help"] = handlers.MakeHelpHandler(commands, versionString())
 
-	globalHandlers := []telegram.Handler{
-		handlers.MakeTorrentFileHandler(),
-		handlers.MakeMagnetLinkHandler(cfg, down),
-	}
-
-	bot, err := telegram.NewBot(cfg, commandHandlers, globalHandlers)
+	bot, err := telegram.NewBot(cfg, handlers)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Could not create the Telegram bot:", err)
 		os.Exit(1)

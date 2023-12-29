@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"log"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -12,7 +13,23 @@ import (
 	"github.com/iley/lich/internal/config"
 )
 
+// Different types of handlers supported.
+const (
+	// Global handlers are called for every message.
+	HANDLER_GLOBAL = iota
+	// Command handlers are called for messages that start with an exact command.
+	HANDLER_COMMAND = iota
+	// Wildcard handlers are the same as command handlers except that the command can include an arbitrary suffix.
+	HANDLER_WILDCARD_COMMAND = iota
+)
+
 type Handler func(*Bot, *tgbotapi.Message) (done bool, nextHandler Handler, err error)
+
+type HandlerDesc struct {
+	Handler Handler
+	Command string
+	Scope   int
+}
 
 type Bot struct {
 	config          *config.Config         // Effectively immutable.
@@ -24,10 +41,26 @@ type Bot struct {
 	mutex           sync.Mutex
 }
 
-func NewBot(
-	cfg *config.Config,
-	commandHandlers map[string]Handler,
-	globalHandlers []Handler) (*Bot, error) {
+func NewBot(cfg *config.Config, handlers []HandlerDesc) (*Bot, error) {
+	globalHandlers := make([]Handler, 0)
+	commandHandlers := make(map[string]Handler)
+	for _, handlerDesc := range handlers {
+		switch handlerDesc.Scope {
+		case HANDLER_GLOBAL:
+			globalHandlers = append(globalHandlers, handlerDesc.Handler)
+		case HANDLER_COMMAND:
+			if handlerDesc.Command == "" {
+				return nil, fmt.Errorf("empty command for command handler")
+			}
+			commandHandlers[handlerDesc.Command] = handlerDesc.Handler
+		case HANDLER_WILDCARD_COMMAND:
+			// TODO: Implement wildcard command handlers.
+			commandHandlers[handlerDesc.Command] = handlerDesc.Handler
+		default:
+			return nil, fmt.Errorf("invalid handler scope %d", handlerDesc.Scope)
+		}
+	}
+
 	var api *tgbotapi.BotAPI
 	var err error
 	if cfg.Proxy == nil {
@@ -45,6 +78,7 @@ func NewBot(
 			return nil, err
 		}
 	}
+
 	bot := Bot{
 		config:          cfg,
 		api:             api,
