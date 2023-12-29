@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"golang.org/x/net/proxy"
-	tgbotapi "gopkg.in/telegram-bot-api.v4"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/iley/lich/internal/config"
 )
@@ -40,7 +40,7 @@ func NewBot(
 		if err != nil {
 			return nil, err
 		}
-		api, err = tgbotapi.NewBotAPIWithClient(cfg.Token, httpClient)
+		api, err = tgbotapi.NewBotAPIWithClient(cfg.Token, tgbotapi.APIEndpoint, httpClient)
 		if err != nil {
 			return nil, err
 		}
@@ -76,14 +76,11 @@ func (bot *Bot) RunLoop() error {
 	log.Println("Running the Telegram bot")
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 120
-	updatesChan, err := bot.api.GetUpdatesChan(updateConfig)
-	if err != nil {
-		return nil
-	}
+	updatesChan := bot.api.GetUpdatesChan(updateConfig)
 	go bot.RunGCLoop()
 	for update := range updatesChan {
 		if bot.UserAllowed(update.Message.From.UserName) {
-			err = bot.EnqueueMessage(update.Message)
+			err := bot.EnqueueMessage(update.Message)
 			if err != nil {
 				log.Printf("Error enqueueing a message for chat %d: %s", update.Message.Chat.ID, err.Error())
 			}
@@ -91,7 +88,7 @@ func (bot *Bot) RunLoop() error {
 			log.Printf("Unauthorized access attempt from user %s", update.Message.From.UserName)
 			reply := tgbotapi.NewMessage(update.Message.Chat.ID, "I don't know you! Go away!")
 			reply.ReplyToMessageID = update.Message.MessageID
-			_, err = bot.api.Send(reply)
+			_, err := bot.api.Send(reply)
 			if err != nil {
 				log.Printf("error sending message: %v", err)
 			}
