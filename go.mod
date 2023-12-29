@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/cenkalti/rain v1.12.12
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
+	golang.org/x/exp v0.0.0-20231226003508-02704c960a9b
 	golang.org/x/net v0.19.0
 )
 
@@ -34,7 +35,6 @@ require (
 	github.com/zeebo/bencode v1.0.0 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
-	golang.org/x/exp v0.0.0-20220325121720-054d8573a5d8 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 // indirect
 	lukechampine.com/blake3 v1.1.6 // indirect

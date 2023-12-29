@@ -12,6 +12,7 @@ import (
 
 	"github.com/cenkalti/rain/torrent"
 	"github.com/iley/lich/internal/config"
+	"golang.org/x/exp/slices"
 )
 
 // ReplyFunc is a function that sends a reply to the user.
@@ -249,6 +250,12 @@ func (d *Downloader) List() []DownloadListEntry {
 			Category:  category,
 		}
 	}
+
+	// Sort to make the list stable.
+	slices.SortFunc(entries, func(a, b DownloadListEntry) int {
+		return strings.Compare(a.TorrentId, b.TorrentId)
+	})
+
 	return entries
 }
 
