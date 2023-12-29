@@ -231,28 +231,6 @@ func (d *Downloader) MoveDownloadedFiles(srcDir string, destDir string) error {
 	return nil
 }
 
-func (d *Downloader) StatusString() string {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	status := ""
-
-	torrents := d.session.ListTorrents()
-	torrentStatuses := make([]string, len(torrents))
-	for i, torrent := range d.session.ListTorrents() {
-		stats := torrent.Stats()
-		torrentStatuses[i] = fmt.Sprintf("%d: %s (%s)", i+1, torrent.Name(), stats.Status.String())
-	}
-
-	if len(torrentStatuses) > 0 {
-		status += fmt.Sprintf("Active downloads:\n%s", strings.Join(torrentStatuses, "\n"))
-	} else {
-		status += "No active downloads"
-	}
-
-	return status
-}
-
 func (d *Downloader) List() []DownloadListEntry {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
