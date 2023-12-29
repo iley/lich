@@ -53,9 +53,18 @@ func (session *chatSession) RunLoop(bot *Bot) {
 			if spaceIndex := strings.IndexRune(command, ' '); spaceIndex != -1 {
 				command = command[:spaceIndex]
 			}
+			// Regular commands.
 			handler, found := bot.commandHandlers[command]
 			if found {
 				done, nextHandler, err = handler(bot, message)
+			} else {
+				// Wildcard commands.
+				for _, wildcardHandler := range bot.wildcardHandlers {
+					if strings.HasPrefix(command, wildcardHandler.Wildcard) {
+						done, nextHandler, err = wildcardHandler.Handler(bot, message)
+						break
+					}
+				}
 			}
 		}
 		for _, globalHandler := range bot.globalHandlers {

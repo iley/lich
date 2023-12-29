@@ -1,14 +1,14 @@
 package telegram
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
 
-	"golang.org/x/net/proxy"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"golang.org/x/net/proxy"
 
 	"github.com/iley/lich/internal/config"
 )
@@ -31,19 +31,26 @@ type HandlerDesc struct {
 	Scope   int
 }
 
+type WildcardHandler struct {
+	Handler  Handler
+	Wildcard string
+}
+
 type Bot struct {
-	config          *config.Config         // Effectively immutable.
-	api             *tgbotapi.BotAPI       // Effectively immutable.
-	commandHandlers map[string]Handler     // Effectively immutable.
-	globalHandlers  []Handler              // Effectively immutable.
-	userWhiltelist  map[string]struct{}    // Effectively immutable.
-	chatSessions    map[int64]*chatSession // Protected by mutex.
-	mutex           sync.Mutex
+	config           *config.Config         // Effectively immutable.
+	api              *tgbotapi.BotAPI       // Effectively immutable.
+	commandHandlers  map[string]Handler     // Effectively immutable.
+	globalHandlers   []Handler              // Effectively immutable.
+	wildcardHandlers []WildcardHandler      // Effectively immutable.
+	userWhiltelist   map[string]struct{}    // Effectively immutable.
+	chatSessions     map[int64]*chatSession // Protected by mutex.
+	mutex            sync.Mutex
 }
 
 func NewBot(cfg *config.Config, handlers []HandlerDesc) (*Bot, error) {
 	globalHandlers := make([]Handler, 0)
 	commandHandlers := make(map[string]Handler)
+	wildcardHandlers := make([]WildcardHandler, 0)
 	for _, handlerDesc := range handlers {
 		switch handlerDesc.Scope {
 		case HANDLER_GLOBAL:
@@ -54,8 +61,13 @@ func NewBot(cfg *config.Config, handlers []HandlerDesc) (*Bot, error) {
 			}
 			commandHandlers[handlerDesc.Command] = handlerDesc.Handler
 		case HANDLER_WILDCARD_COMMAND:
-			// TODO: Implement wildcard command handlers.
-			commandHandlers[handlerDesc.Command] = handlerDesc.Handler
+			if handlerDesc.Command == "" {
+				return nil, fmt.Errorf("empty command for wildcard command handler")
+			}
+			wildcardHandlers = append(wildcardHandlers, WildcardHandler{
+				Handler:  handlerDesc.Handler,
+				Wildcard: handlerDesc.Command,
+			})
 		default:
 			return nil, fmt.Errorf("invalid handler scope %d", handlerDesc.Scope)
 		}
@@ -80,12 +92,13 @@ func NewBot(cfg *config.Config, handlers []HandlerDesc) (*Bot, error) {
 	}
 
 	bot := Bot{
-		config:          cfg,
-		api:             api,
-		commandHandlers: commandHandlers,
-		globalHandlers:  globalHandlers,
-		userWhiltelist:  make(map[string]struct{}),
-		chatSessions:    make(map[int64]*chatSession),
+		config:           cfg,
+		api:              api,
+		commandHandlers:  commandHandlers,
+		globalHandlers:   globalHandlers,
+		wildcardHandlers: wildcardHandlers,
+		userWhiltelist:   make(map[string]struct{}),
+		chatSessions:     make(map[int64]*chatSession),
 	}
 	if len(cfg.UsersAllowlist) == 0 {
 		log.Println("Warning! No Telegram user whlitelist enforced.")
