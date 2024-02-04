@@ -29,14 +29,14 @@ jobs:
     - name: Build
       run: make all
     - name: Rename the package
-      run: mv lich.deb lich_amd64.deb
+      run: mv bin/lich.deb bin/lich_amd64.deb
     - name: Create a release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          lich_amd64.deb
+          bin/lich_amd64.deb
           config/config_example.json
-          lich_linux_amd64
-          lich_linux_arm64
-          lich_darwin_amd64
-          lich_darwin_arm64
+          bin/lich_linux_amd64
+          bin/lich_linux_arm64
+          bin/lich_darwin_amd64
+          bin/lich_darwin_arm64
