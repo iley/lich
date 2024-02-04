@@ -4,7 +4,7 @@ github.com/cenkalti/backoff/v3
 # github.com/cenkalti/log v1.0.0
 ## explicit; go 1.14
 github.com/cenkalti/log
-# github.com/cenkalti/rain v1.12.12
+# github.com/cenkalti/rain v1.12.14
 ## explicit; go 1.21
 github.com/cenkalti/rain/internal/acceptor
 github.com/cenkalti/rain/internal/addrlist
@@ -65,7 +65,7 @@ github.com/go-telegram-bot-api/telegram-bot-api/v5
 # github.com/gofrs/uuid v4.4.0+incompatible
 ## explicit
 github.com/gofrs/uuid
-# github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
+# github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 ## explicit
 github.com/golang/groupcache/lru
 # github.com/google/btree v1.1.2
@@ -77,20 +77,20 @@ github.com/hashicorp/errwrap
 # github.com/hashicorp/go-multierror v1.1.1
 ## explicit; go 1.13
 github.com/hashicorp/go-multierror
-# github.com/jackpal/bencode-go v1.0.0
-## explicit
+# github.com/jackpal/bencode-go v1.0.2
+## explicit; go 1.21.4
 github.com/jackpal/bencode-go
 # github.com/juju/ratelimit v1.0.2
 ## explicit
 github.com/juju/ratelimit
-# github.com/klauspost/cpuid/v2 v2.0.9
-## explicit; go 1.13
+# github.com/klauspost/cpuid/v2 v2.2.6
+## explicit; go 1.15
 github.com/klauspost/cpuid/v2
-# github.com/mattn/go-isatty v0.0.12
-## explicit; go 1.12
+# github.com/mattn/go-isatty v0.0.20
+## explicit; go 1.15
 github.com/mattn/go-isatty
-# github.com/minio/sha256-simd v1.0.0
-## explicit; go 1.13
+# github.com/minio/sha256-simd v1.0.1
+## explicit; go 1.17
 github.com/minio/sha256-simd
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
@@ -109,8 +109,8 @@ github.com/multiformats/go-multihash/register/miniosha256
 github.com/multiformats/go-multihash/register/murmur3
 github.com/multiformats/go-multihash/register/sha256
 github.com/multiformats/go-multihash/register/sha3
-# github.com/multiformats/go-varint v0.0.6
-## explicit; go 1.12
+# github.com/multiformats/go-varint v0.0.7
+## explicit; go 1.18
 github.com/multiformats/go-varint
 # github.com/nictuku/dht v0.0.0-20201226073453-fd1c1dd3d66a
 ## explicit; go 1.12
@@ -133,29 +133,29 @@ github.com/youtube/vitess/go/cache
 # github.com/zeebo/bencode v1.0.0
 ## explicit
 github.com/zeebo/bencode
-# go.etcd.io/bbolt v1.3.7
+# go.etcd.io/bbolt v1.3.8
 ## explicit; go 1.17
 go.etcd.io/bbolt
-# golang.org/x/crypto v0.16.0
+# golang.org/x/crypto v0.18.0
 ## explicit; go 1.18
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/blake2s
 golang.org/x/crypto/sha3
-# golang.org/x/exp v0.0.0-20231226003508-02704c960a9b
+# golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/slices
-# golang.org/x/net v0.19.0
+# golang.org/x/net v0.20.0
 ## explicit; go 1.18
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.15.0
+# golang.org/x/sys v0.16.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
 ## explicit
-# lukechampine.com/blake3 v1.1.6
-## explicit; go 1.13
+# lukechampine.com/blake3 v1.2.1
+## explicit; go 1.17
 lukechampine.com/blake3
