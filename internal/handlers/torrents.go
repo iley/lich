@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"io"
 	"fmt"
+	"net/http"
+	"log"
 	"regexp"
 	"strings"
 
@@ -78,7 +81,34 @@ func makeKeyboard(keys []string) [][]tgbotapi.KeyboardButton {
 var magnetLinkRegex = regexp.MustCompile(`magnet:\S+`)
 
 func extractMagnetLink(text string) string {
+	if isURL(text) {
+		var err error
+		text, err = downloadWebPage(text)
+		if err != nil {
+			log.Printf("Could not download web page: %s", err.Error())
+			return ""
+		}
+	}
 	return magnetLinkRegex.FindString(text)
+}
+
+func isURL(text string) bool {
+	return strings.HasPrefix(text, "http://") || strings.HasPrefix(text, "https://")
+}
+
+func downloadWebPage(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }
 
 func MakeCancelHandler(down *torrents.Downloader) telegram.Handler {
