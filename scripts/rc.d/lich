@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# PROVIDE: lich
+# REQUIRE: NETWORKING
+
+. /etc/rc.subr
+
+name=lich
+rcvar=lich_enable
+
+pidfile="/var/run/${name}.pid"
+command="/usr/sbin/daemon" 
+command_args="-P ${pidfile} -u lich -r -f /usr/local/bin/${name} -config /etc/lich/config.json"
+
+load_rc_config $name
+
+: ${lich_enable:=no}
+
+run_rc_command "$1"
