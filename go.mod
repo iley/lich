@@ -1,27 +1,27 @@
 module github.com/iley/lich
 
-go 1.21.4
+go 1.22.0
 
-toolchain go1.21.5
+toolchain go1.23.3
 
 require (
-	github.com/cenkalti/rain v1.12.14
+	github.com/cenkalti/rain v1.13.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
-	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
-	golang.org/x/net v0.20.0
+	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
+	golang.org/x/net v0.32.0
 )
 
 require (
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cenkalti/log v1.0.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/btree v1.1.2 // indirect
+	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
+	github.com/google/btree v1.1.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jackpal/bencode-go v1.0.2 // indirect
 	github.com/juju/ratelimit v1.0.2 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -35,9 +35,9 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/youtube/vitess v3.0.0-rc.3+incompatible // indirect
 	github.com/zeebo/bencode v1.0.0 // indirect
-	go.etcd.io/bbolt v1.3.8 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	go.etcd.io/bbolt v1.3.11 // indirect
+	golang.org/x/crypto v0.30.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
 	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 // indirect
-	lukechampine.com/blake3 v1.2.1 // indirect
+	lukechampine.com/blake3 v1.3.0 // indirect
 )

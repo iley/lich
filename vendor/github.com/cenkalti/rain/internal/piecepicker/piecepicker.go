@@ -37,6 +37,7 @@ type PiecePicker struct {
 	piecesByAvailability []*myPiece
 	piecesByStalled      []*myPiece
 	maxDuplicateDownload int
+	maxWebseedPieces     int
 	available            uint32
 	endgame              bool
 }
@@ -63,16 +64,12 @@ func (p *myPiece) StalledDownloads() int {
 	return p.Snubbed.Len() + p.Choked.Len()
 }
 
-// AvailableForWebseed returns true if the piece can be downloaded from a webseed source.
-// If the piece is already requested from a peer, it does not become eligible for downloading from webseed until entering the endgame mode.
-func (p *myPiece) AvailableForWebseed(duplicate bool) bool {
-	if p.Done || p.Writing || p.RequestedWebseed != nil {
+// AvailableForWebseed returns true if the piece is allowed to be downloaded from a webseed source.
+func (p *myPiece) AvailableForWebseed() bool {
+	if p.Done || p.Writing {
 		return false
 	}
-	if !duplicate {
-		return p.RequestedWebseed != nil
-	}
-	return true
+	return p.RequestedWebseed == nil
 }
 
 // New returns a new PiecePicker.
@@ -87,11 +84,16 @@ func New(pieces []piece.Piece, maxDuplicateDownload int, webseedSources []*webse
 		sps[i] = &ps[i]
 		sps2[i] = &ps[i]
 	}
+	maxWebseedPieces := len(pieces) / 20 // Download 5% of pieces in a single HTTP request (see BEP19)
+	if maxWebseedPieces == 0 {
+		maxWebseedPieces = 1
+	}
 	return &PiecePicker{
 		pieces:               ps,
 		piecesByAvailability: sps,
 		piecesByStalled:      sps2,
 		maxDuplicateDownload: maxDuplicateDownload,
+		maxWebseedPieces:     maxWebseedPieces,
 		webseedSources:       webseedSources,
 	}
 }

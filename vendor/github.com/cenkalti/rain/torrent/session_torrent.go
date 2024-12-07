@@ -42,22 +42,19 @@ func (t *Torrent) Name() string {
 	return t.torrent.Name()
 }
 
-// RootDirectory of the torrent.
-// The directory that contains the files in the torrent.
-func (t *Torrent) RootDirectory() string {
-	return t.torrent.RootDirectory()
+// Dir returns the directory that contains the files in the torrent.
+func (t *Torrent) Dir() string {
+	return t.torrent.Dir()
 }
 
-// The files in the torrent.
-// The paths of the files are relative to the root directory.
-func (t *Torrent) FilePaths() ([]string, error) {
-	return t.torrent.FilePaths()
-}
-
-// The files in the torrent with completion info. An error is returned
-// when metainfo isn't ready.
+// Files in the torrent. An error is returned when metainfo isn't ready.
 func (t *Torrent) Files() ([]File, error) {
 	return t.torrent.Files()
+}
+
+// FileStats returns statistics about each file in the torrent. An error is returned when torrent is not running.
+func (t *Torrent) FileStats() ([]FileStats, error) {
+	return t.torrent.FileStats()
 }
 
 // InfoHash returns the hash of the info dictionary of torrent file.
