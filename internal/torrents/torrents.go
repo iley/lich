@@ -135,7 +135,7 @@ func (d *Downloader) Cleanup() error {
 			}
 
 			targetDir := d.GetTargetDir(category)
-			err := d.MoveDownloadedFiles(torr.RootDirectory(), targetDir)
+			err := d.MoveDownloadedFiles(torr.Dir(), targetDir)
 			if err != nil {
 				log.Printf("Could not move downloaded files: %s", err.Error())
 				continue
